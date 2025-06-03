@@ -8,7 +8,6 @@ export default function SignIn() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [providers, setProviders] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -20,35 +19,11 @@ export default function SignIn() {
 
   useEffect(() => {
     const fetchProviders = async () => {
-      try {
-        const res = await getProviders();
-        console.log("Providers:", res);
-        setProviders(res);
-      } catch (err) {
-        console.error("Error fetching providers:", err);
-        setError("Failed to load authentication providers");
-      }
+      const res = await getProviders();
+      setProviders(res);
     };
     fetchProviders();
   }, []);
-
-  const handleSignIn = async (providerId: string) => {
-    try {
-      console.log("Attempting to sign in with:", providerId);
-      const result = await signIn(providerId, { 
-        callbackUrl: '/',
-        redirect: false 
-      });
-      console.log("Sign in result:", result);
-      
-      if (result?.error) {
-        setError(`Sign in failed: ${result.error}`);
-      }
-    } catch (err) {
-      console.error("Sign in error:", err);
-      setError("An unexpected error occurred during sign in");
-    }
-  };
 
   if (status === "loading") {
     return (
@@ -77,17 +52,11 @@ export default function SignIn() {
           </p>
         </div>
         
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
-        
         <div className="space-y-4">
-          {providers ? Object.values(providers).map((provider: any) => (
+          {providers && Object.values(providers).map((provider: any) => (
             <button
               key={provider.name}
-              onClick={() => handleSignIn(provider.id)}
+              onClick={() => signIn(provider.id, { callbackUrl: '/' })}
               className="w-full flex justify-center items-center px-6 py-3 
                        bg-[#f5ff23] 
                        text-black font-bold rounded-lg 
@@ -100,26 +69,12 @@ export default function SignIn() {
             >
               Sign in with {provider.name}
             </button>
-          )) : (
-            <div className="text-center text-gray-500">
-              Loading authentication providers...
-            </div>
-          )}
+          ))}
         </div>
         
         <div className="text-center text-sm text-gray-500">
           <p>By signing in, you agree to our Terms of Service and Privacy Policy</p>
         </div>
-
-        {/* Debug info in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-8 p-4 bg-gray-100 rounded text-xs">
-            <h3 className="font-bold mb-2">Debug Info:</h3>
-            <p>Status: {status}</p>
-            <p>Session: {session ? 'Authenticated' : 'Not authenticated'}</p>
-            <p>Providers loaded: {providers ? 'Yes' : 'No'}</p>
-          </div>
-        )}
       </div>
     </div>
   );
