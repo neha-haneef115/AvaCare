@@ -14,9 +14,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           prompt: "consent",
           access_type: "offline",
           response_type: "code",
-          // Add additional parameters to help with user agent issues
+          // These parameters help with Google's secure browser policy
           include_granted_scopes: "true",
         },
+      },
+      // Use explicit scopes to ensure compatibility
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        }
       },
     }),
   ],
@@ -34,10 +43,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       else if (new URL(url).origin === baseUrl) return url
       return baseUrl
     },
+    async signIn({ account, profile }) {
+      // Additional validation can be added here
+      return true;
+    },
   },
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error',
+  },
+  session: {
+    strategy: "database",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   debug: process.env.NODE_ENV === "development",
   trustHost: true,
