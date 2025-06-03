@@ -1,15 +1,14 @@
+// app/page.tsx
 "use client";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import MainLayout from '@/components/MainLayout';
 import ChatBox from '@/components/Chatbot'; 
+import Footer from "@/components/Footer";
 import NearbyDoctors from '@/components/Nearbydoctor';
 import AnalysisResults from '@/components/Results';
+import { MapPin } from "lucide-react";
 
-import { 
-  MapPin
-} from "lucide-react";
-
-// Add the missing interface definitions
 interface Symptom {
   name: string;
   severity?: number;
@@ -60,12 +59,35 @@ interface Report {
 }
 
 export default function SymptomCheckerUI() {
+  const { data: session } = useSession();
   const [showResults, setShowResults] = useState(false);
   const [userLocation, setUserLocation] = useState(false);
+  const [userCoordinates, setUserCoordinates] = useState<{
+    latitude: number;
+    longitude: number;
+    city: string;
+  } | null>(null);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
 
-  const detectLocation = () => {
-    setUserLocation(true);
+  const handleLocationDetection = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation(true);
+          setUserCoordinates({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            city: "Unknown" // You might want to implement reverse geocoding here
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          setUserLocation(false);
+        }
+      );
+    } else {
+      console.error("Geolocation is not supported by this browser.");
+    }
   };
 
   const handleAnalysisComplete = (results: AnalysisResult) => {
@@ -75,19 +97,21 @@ export default function SymptomCheckerUI() {
 
   return (
     <MainLayout>
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex flex-col h-[calc(100vh-0rem)]">
         {/* Header */}
         <header className="bg-white border-b-2 border-black p-4">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold flex items-center">
-                <span className="mr-2">🩺</span> Dr.AI
+                <span className="mr-2"></span>AvaCare
               </h1>
-              <p className="text-black mt-2">Advanced AI symptom analysis with 80-95% accuracy</p>
+              <p className="text-black mt-2">
+                Welcome back, {session?.user?.name?.split(' ')[0]}! Advanced symptom analysis
+              </p>
             </div>
             {!userLocation ? (
               <button
-                onClick={detectLocation}
+                onClick={handleLocationDetection}
                 className="flex items-center px-6 py-3 
                          bg-[#f5ff23] 
                          text-black font-bold rounded-lg 
@@ -120,22 +144,14 @@ export default function SymptomCheckerUI() {
 
           {/* NearbyDoctors Component */}
           <NearbyDoctors 
-            userLocation={userLocation} 
-            onLocationDetect={detectLocation} 
+            userLocation={userLocation}
+            onLocationDetect={handleLocationDetection}
+            conditions={analysisResults?.conditions || []}
+            userCoords={userCoordinates || undefined}
           />
+          
+          <Footer/>
         </main>
-
-        <footer className="bg-white border-t-2 border-black p-4 text-center text-sm">
-          <div className="max-w-4xl mx-auto">
-            <p className="font-bold">© {new Date().getFullYear()} Dr.AI - Advanced Medical AI Platform. All rights reserved.</p>
-            <div className="flex justify-center space-x-6 mt-2">
-              <a href="#" className="hover:underline font-medium">Privacy Policy</a>
-              <a href="#" className="hover:underline font-medium">Terms of Service</a>
-              <a href="#" className="hover:underline font-medium">Medical Disclaimer</a>
-              <a href="#" className="hover:underline font-medium">Contact Support</a>
-            </div>
-          </div>
-        </footer>
       </div>
     </MainLayout>
   );

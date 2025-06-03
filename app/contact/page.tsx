@@ -1,16 +1,16 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
+import { IoLogoWhatsapp } from "react-icons/io";
 import MainLayout from '@/components/MainLayout';
+import { MdEmail } from "react-icons/md";
+import Footer from "@/components/Footer";
+import { TiSocialLinkedin } from "react-icons/ti";
 import { 
-  Mail, 
-  Phone, 
-  MapPin, 
   Send,
-  MessageSquare,
-  Clock,
-  Users,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 
 interface ContactForm {
@@ -31,6 +31,7 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -40,17 +41,23 @@ export default function ContactPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
     
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      // Reset form after successful submission
-      setTimeout(() => {
-        setIsSubmitted(false);
+    try {
+      const response = await fetch("https://formspree.io/f/xkgbnwep", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        setIsSubmitted(true);
+        // Reset form after successful submission
         setFormData({
           name: "",
           email: "",
@@ -58,40 +65,18 @@ export default function ContactPage() {
           message: "",
           category: "general"
         });
-      }, 3000);
-    }, 2000);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to send message");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const contactMethods = [
-    {
-      icon: Mail,
-      title: "Email Support",
-      value: "support@symptomcheck.ai",
-      description: "Get help within 24 hours",
-      color: "bg-blue-100"
-    },
-    {
-      icon: Phone,
-      title: "Phone Support",
-      value: "+1 (555) 123-4567",
-      description: "Mon-Fri, 9AM-6PM EST",
-      color: "bg-green-100"
-    },
-    {
-      icon: MapPin,
-      title: "Office Location",
-      value: "123 Health Tech Ave",
-      description: "San Francisco, CA 94105",
-      color: "bg-purple-100"
-    },
-    {
-      icon: MessageSquare,
-      title: "Live Chat",
-      value: "Available 24/7",
-      description: "Instant support online",
-      color: "bg-yellow-100"
-    }
-  ];
+ 
 
   const faqItems = [
     {
@@ -114,41 +99,55 @@ export default function ContactPage() {
 
   return (
     <MainLayout>
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen overflow-y-auto">
         {/* Header */}
         <header className="bg-white border-b-2 border-black p-6">
-          <div className="max-w-6xl mx-auto text-center">
-            <h1 className="text-4xl font-black mb-2">Contact Us</h1>
-            <p className="text-lg font-medium text-gray-700">
-              Get in touch with our support team - we're here to help!
-            </p>
-          </div>
-        </header>
+<div className="max-w-6xl mx-auto text-center">
+    <h1 className="text-4xl font-black mb-2">Contact Us</h1>
+    <p className="text-lg font-medium text-gray-700 mb-4">
+      Get in touch with us - we're here to help!
+    </p>
+    <div className="flex flex-col sm:flex-row justify-center items-center gap-5 text-gray-600">
+<div className="flex items-center gap-2 ">
+      <MdEmail className="w-6 h-6 text-grey-600" />
+      <div>
+      
+      nehahaneef203@gmail.com
+      </div>
+  </div>
+    <Link 
+      href="https://wa.me/923257220057" 
+      className="flex items-center gap-2 hover:underline"
+    >
+      <IoLogoWhatsapp className="w-6 h-6 text-grey-600" />
+      <div>
+       
+        <p className="text-gray-700">+92 325 7220057</p>
+      </div>
+    </Link>
 
+    {/* LinkedIn */}
+    <Link 
+      href="https://www.linkedin.com/in/neha-haneef115" 
+      className="flex items-center gap-2 hover:underline"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <TiSocialLinkedin className="w-6 h-6 text-grey-600" />
+      <div>
+       
+        <p className="text-gray-700">@neha-haneef115</p>
+      </div>
+    </Link>
+    </div>
+  </div>
+</header>
         {/* Main Content */}
         <main className="flex-1 bg-gradient-to-br from-blue-50 to-green-50 p-6">
           <div className="max-w-6xl mx-auto">
             
             {/* Contact Methods Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {contactMethods.map((method, index) => (
-                <div 
-                  key={index}
-                  className="bg-white border-2 border-black rounded-lg p-6 text-center
-                           shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
-                           hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-                           hover:translate-x-[2px] hover:translate-y-[2px]
-                           transition-all duration-200"
-                >
-                  <div className={`${method.color} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-black`}>
-                    <method.icon className="w-8 h-8 text-black" />
-                  </div>
-                  <h3 className="font-bold text-lg mb-2">{method.title}</h3>
-                  <p className="font-bold text-black mb-1">{method.value}</p>
-                  <p className="text-sm text-gray-600">{method.description}</p>
-                </div>
-              ))}
-            </div>
+            
 
             <div className="grid lg:grid-cols-2 gap-8">
               {/* Contact Form */}
@@ -166,9 +165,26 @@ export default function ContactPage() {
                       </div>
                       <h3 className="text-xl font-bold mb-2">Message Sent!</h3>
                       <p className="text-gray-600">Thank you for contacting us. We'll respond soon.</p>
+                      <button
+                        onClick={() => setIsSubmitted(false)}
+                        className="mt-4 px-4 py-2 bg-[#f5ff23] text-black font-bold rounded-lg 
+                                 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
+                                 hover:bg-[#E5Ef20] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
+                                 hover:translate-x-[2px] hover:translate-y-[2px] 
+                                 transition-all duration-200"
+                      >
+                        Send another message
+                      </button>
                     </div>
                   ) : (
                     <form onSubmit={handleSubmit} className="space-y-4">
+                      {error && (
+                        <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4 flex items-start">
+                          <XCircle className="w-5 h-5 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-red-700">{error}</p>
+                        </div>
+                      )}
+                      
                       <div>
                         <label className="block text-sm font-bold mb-2">Name *</label>
                         <input
@@ -197,23 +213,7 @@ export default function ContactPage() {
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-bold mb-2">Category</label>
-                        <select
-                          name="category"
-                          value={formData.category}
-                          onChange={handleInputChange}
-                          className="w-full p-3 border-2 border-black rounded-lg focus:outline-none font-medium
-                                   shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                        >
-                          <option value="general">General Inquiry</option>
-                          <option value="technical">Technical Support</option>
-                          <option value="medical">Medical Questions</option>
-                          <option value="privacy">Privacy & Security</option>
-                          <option value="billing">Billing & Payments</option>
-                          <option value="partnership">Partnership</option>
-                        </select>
-                      </div>
+                    
 
                       <div>
                         <label className="block text-sm font-bold mb-2">Subject *</label>
@@ -295,69 +295,19 @@ export default function ContactPage() {
                       <h3 className="font-bold text-red-800 mb-2">Medical Emergency Notice</h3>
                       <p className="text-sm text-red-700 leading-relaxed">
                         If you're experiencing a medical emergency, do not use this contact form. 
-                        Call 911 immediately or go to your nearest emergency room.
+                        Call 115 immediately or go to your nearest emergency room.
                       </p>
                     </div>
                   </div>
-                </div>
-
-                {/* Support Hours */}
-                <div className="bg-white border-2 border-black rounded-lg p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                  <div className="flex items-center mb-4">
-                    <Clock className="w-6 h-6 mr-3" />
-                    <h3 className="font-bold text-lg">Support Hours</h3>
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="font-medium">Monday - Friday:</span>
-                      <span>9:00 AM - 6:00 PM EST</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Saturday:</span>
-                      <span>10:00 AM - 4:00 PM EST</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Sunday:</span>
-                      <span>Closed</span>
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-gray-300">
-                      <p className="text-xs text-gray-600">
-                        <strong>Live Chat:</strong> Available 24/7 for urgent technical issues
-                      </p>
-                    </div>
-                  </div>
+                  
                 </div>
               </div>
             </div>
           </div>
+          
         </main>
 
-        {/* Footer */}
-        <footer className="bg-white border-t-2 border-black p-6">
-          <div className="max-w-6xl mx-auto text-center">
-            <p className="font-bold text-lg mb-3">
-              © {new Date().getFullYear()} SymptomCheck AI. All rights reserved.
-            </p>
-            <div className="flex flex-wrap justify-center gap-6">
-              <a href="#" className="hover:underline font-medium text-black 
-                                   hover:text-gray-700 transition-colors">
-                Privacy Policy
-              </a>
-              <a href="#" className="hover:underline font-medium text-black 
-                                   hover:text-gray-700 transition-colors">
-                Terms of Service
-              </a>
-              <a href="#" className="hover:underline font-medium text-black 
-                                   hover:text-gray-700 transition-colors">
-                About Us
-              </a>
-              <a href="#" className="hover:underline font-medium text-black 
-                                   hover:text-gray-700 transition-colors">
-                Careers
-              </a>
-            </div>
-          </div>
-        </footer>
+       <Footer/>
       </div>
     </MainLayout>
   );

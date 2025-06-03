@@ -41,7 +41,7 @@ export default function ChatBox({ onAnalysisComplete }: ChatBoxProps) {
     setMessages([
       {
         id: 1,
-        text: "Hello! I'm Dr.AI. Please describe your main symptom or health concern in detail.",
+        text: "Hello! I'm symptom checker. Please describe your main symptom or health concern in detail.",
         sender: "bot"
       }
     ]);
@@ -338,7 +338,7 @@ Focus on the most diagnostically important question based on their symptoms. No 
       <div className="p-4 bg-[#f8fed5] border-b-2 border-black">
         <h2 className="text-lg font-bold flex items-center">
           
-          AI-Powered Symptom Checker
+          Symptom Checker
         </h2>
         <p className="text-sm mt-1 font-medium">Your personal health companion</p>
       </div>
