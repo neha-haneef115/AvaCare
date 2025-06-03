@@ -12,7 +12,8 @@ export default function SignIn() {
     isSecure: true,
     isInApp: false,
     browserName: '',
-    recommendation: ''
+    recommendation: '',
+    userAgent: ''
   });
 
   useEffect(() => {
@@ -30,48 +31,61 @@ export default function SignIn() {
     };
     fetchProviders();
 
-    // Enhanced browser detection
+    // Enhanced browser detection for Google OAuth compatibility
     const detectBrowser = () => {
       const userAgent = navigator.userAgent.toLowerCase();
       const isHttps = window.location.protocol === 'https:';
       
-      // Detect in-app browsers (these often cause issues with Google OAuth)
+      // More comprehensive in-app browser detection
       const inAppBrowsers = [
         'instagram', 'facebook', 'twitter', 'linkedin', 'tiktok', 
         'snapchat', 'whatsapp', 'telegram', 'discord', 'slack',
-        'wechat', 'line', 'kakaotalk', 'pinterest'
+        'wechat', 'line', 'kakaotalk', 'pinterest', 'fban', 'fbav'
       ];
       
       const isInApp = inAppBrowsers.some(browser => userAgent.includes(browser));
       
-      // Detect embedded webviews
+      // Detect various types of embedded webviews
       const isWebView = userAgent.includes('wv') || // Android WebView
-                       userAgent.includes('version/') && userAgent.includes('chrome') && userAgent.includes('mobile');
+                       userAgent.includes('version/') && userAgent.includes('chrome') && userAgent.includes('mobile') ||
+                       userAgent.includes('gsa/') || // Google Search App
+                       userAgent.includes('crios/') || // Chrome iOS
+                       userAgent.includes('fxios/'); // Firefox iOS
       
-      // Detect problematic environments
-      const isProblematic = isInApp || isWebView || !isHttps;
+      // Check for problematic user agent strings that Google blocks
+      const hasProblematicUA = userAgent.includes('webview') ||
+                              userAgent.includes('embedded') ||
+                              userAgent.includes('inapp');
+      
+      // Check if running in iframe
+      const isInIframe = window !== window.top;
+      
+      const isProblematic = isInApp || isWebView || !isHttps || hasProblematicUA || isInIframe;
       
       let browserName = 'Unknown';
       let recommendation = '';
       
-      if (userAgent.includes('chrome')) browserName = 'Chrome';
+      if (userAgent.includes('edg/')) browserName = 'Edge';
+      else if (userAgent.includes('chrome')) browserName = 'Chrome';
       else if (userAgent.includes('safari') && !userAgent.includes('chrome')) browserName = 'Safari';
       else if (userAgent.includes('firefox')) browserName = 'Firefox';
-      else if (userAgent.includes('edge')) browserName = 'Edge';
       
       if (isInApp) {
-        recommendation = 'Please open this page in your default browser (Chrome, Safari, or Firefox) instead of the in-app browser.';
+        recommendation = 'Please tap the three dots menu and select "Open in Browser" or copy the URL to your default browser (Chrome, Safari, or Firefox).';
       } else if (isWebView) {
-        recommendation = 'This appears to be an embedded browser. Please use your main browser app.';
+        recommendation = 'This appears to be an embedded browser. Please use your main browser app directly.';
       } else if (!isHttps) {
         recommendation = 'Please ensure you are accessing this page via HTTPS.';
+      } else if (isInIframe) {
+        recommendation = 'Please open this page directly in a new tab, not within an iframe.';
       }
       
       setBrowserInfo({
         isSecure: !isProblematic,
         isInApp: isInApp || isWebView,
         browserName,
-        recommendation
+        recommendation,
+        userAgent: navigator.userAgent
       });
     };
 
@@ -85,29 +99,62 @@ export default function SignIn() {
     }
     
     try {
-      await signIn(providerId, { 
+      // Use a more direct approach for sign-in
+      const result = await signIn(providerId, { 
         callbackUrl: '/',
-        redirect: true
+        redirect: false  // Handle redirect manually to catch errors
       });
+      
+      if (result?.error) {
+        console.error('Sign in error:', result.error);
+        // Redirect to error page with specific error
+        router.push(`/auth/error?error=${result.error}`);
+      } else if (result?.url) {
+        // Successful sign-in, redirect to the URL
+        window.location.href = result.url;
+      }
     } catch (error) {
       console.error('Sign in error:', error);
+      router.push('/auth/error?error=Configuration');
+    }
+  };
+
+  const copyUrlToClipboard = async () => {
+    const currentUrl = window.location.href;
+    try {
+      await navigator.clipboard.writeText(currentUrl);
+      alert('URL copied to clipboard! Please paste it in your default browser.');
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = currentUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('URL copied! Please paste it in your default browser.');
     }
   };
 
   const openInBrowser = () => {
     const currentUrl = window.location.href;
     
-    // Try to open in default browser
+    // For different platforms
     if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
-      // iOS - copy to clipboard and show instructions
-      navigator.clipboard.writeText(currentUrl).then(() => {
-        alert('URL copied to clipboard! Please paste it in Safari or your preferred browser.');
-      }).catch(() => {
-        alert(`Please copy this URL and open it in Safari: ${currentUrl}`);
-      });
+      // iOS - copy to clipboard
+      copyUrlToClipboard();
+    } else if (navigator.userAgent.includes('Android')) {
+      // Android - try to open in default browser
+      const intent = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;package=com.android.chrome;end`;
+      window.location.href = intent;
+      
+      // Fallback after a delay
+      setTimeout(() => {
+        copyUrlToClipboard();
+      }, 2000);
     } else {
-      // Android or other - try to open in browser
-      window.open(currentUrl, '_system');
+      // Desktop or other - try to open in new window
+      window.open(currentUrl, '_blank');
     }
   };
 
@@ -138,6 +185,15 @@ export default function SignIn() {
           </p>
         </div>
 
+        {/* Debug info for development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-gray-100 p-3 rounded-lg text-xs">
+            <p><strong>User Agent:</strong> {browserInfo.userAgent}</p>
+            <p><strong>Secure:</strong> {browserInfo.isSecure ? 'Yes' : 'No'}</p>
+            <p><strong>In-App:</strong> {browserInfo.isInApp ? 'Yes' : 'No'}</p>
+          </div>
+        )}
+
         {!browserInfo.isSecure && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
             <div className="flex items-start">
@@ -148,17 +204,23 @@ export default function SignIn() {
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800">
-                  Unsupported Browser Environment
+                  Browser Not Compatible with Google Sign-In
                 </h3>
                 <p className="mt-2 text-sm text-red-700">
                   {browserInfo.recommendation}
                 </p>
-                <div className="mt-4">
+                <div className="mt-4 space-y-2">
                   <button
                     onClick={openInBrowser}
+                    className="bg-red-100 hover:bg-red-200 text-red-800 font-medium py-2 px-4 rounded-lg text-sm transition-colors mr-2"
+                  >
+                    Open in Browser
+                  </button>
+                  <button
+                    onClick={copyUrlToClipboard}
                     className="bg-red-100 hover:bg-red-200 text-red-800 font-medium py-2 px-4 rounded-lg text-sm transition-colors"
                   >
-                    Open in Default Browser
+                    Copy URL
                   </button>
                 </div>
               </div>
@@ -173,7 +235,7 @@ export default function SignIn() {
                 <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                Secure browser detected ({browserInfo.browserName})
+                Compatible browser detected ({browserInfo.browserName})
               </div>
             </div>
             
@@ -197,23 +259,19 @@ export default function SignIn() {
           </div>
         ) : (
           <div className="bg-gray-100 p-6 rounded-lg">
-            <h3 className="font-semibold text-gray-800 mb-3">How to Access in a Secure Browser:</h3>
+            <h3 className="font-semibold text-gray-800 mb-3">Steps to Fix Google Sign-In:</h3>
             <div className="space-y-3 text-sm text-gray-700">
               <div className="flex items-start">
                 <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
-                <span>Copy the current page URL</span>
+                <span>Open Chrome, Safari, or Firefox directly (not from another app)</span>
               </div>
               <div className="flex items-start">
                 <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
-                <span>Open your default browser (Chrome, Safari, Firefox)</span>
+                <span>Navigate to this page's URL manually</span>
               </div>
               <div className="flex items-start">
                 <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
-                <span>Paste the URL and navigate to this page</span>
-              </div>
-              <div className="flex items-start">
-                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">4</span>
-                <span>Sign in using Google OAuth</span>
+                <span>Try signing in with Google again</span>
               </div>
             </div>
           </div>

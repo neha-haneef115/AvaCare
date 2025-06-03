@@ -11,21 +11,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-          prompt: "consent",
+          scope: "openid email profile",
+          prompt: "select_account",
           access_type: "offline",
-          response_type: "code",
-          // These parameters help with Google's secure browser policy
-          include_granted_scopes: "true",
+          response_type: "code"
         },
-      },
-      // Use explicit scopes to ensure compatibility
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          image: profile.picture,
-        }
       },
     }),
   ],
@@ -37,14 +27,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
+      // Handle relative URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`
-      // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url
+      // Handle same origin URLs
+      if (new URL(url).origin === baseUrl) return url
+      // Default to base URL
       return baseUrl
     },
-    async signIn({ account, profile }) {
-      // Additional validation can be added here
+    async signIn({ account, profile, user }) {
+      // Add debugging in development
+      if (process.env.NODE_ENV === "development") {
+        console.log("SignIn callback:", { account, profile, user });
+      }
       return true;
     },
   },
@@ -57,5 +51,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   debug: process.env.NODE_ENV === "development",
-  trustHost: true,
+  // Only trust host in development
+  ...(process.env.NODE_ENV === "development" && { trustHost: true }),
 })
