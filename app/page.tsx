@@ -1,7 +1,7 @@
 // app/page.tsx
 "use client";
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 import MainLayout from '@/components/MainLayout';
 import ChatBox from '@/components/Chatbot'; 
 import Footer from "@/components/Footer";
@@ -59,7 +59,7 @@ interface Report {
 }
 
 export default function SymptomCheckerUI() {
-  const { data: session } = useSession();
+  const { user, isLoaded, isSignedIn } = useUser();
   const [showResults, setShowResults] = useState(false);
   const [userLocation, setUserLocation] = useState(false);
   const [userCoordinates, setUserCoordinates] = useState<{
@@ -95,6 +95,11 @@ export default function SymptomCheckerUI() {
     setShowResults(true);
   };
 
+  // Loading state handled by LayoutWrapper, but we can add additional check here if needed
+  if (!isLoaded || !isSignedIn) {
+    return null; // LayoutWrapper will handle loading/auth redirect
+  }
+
   return (
     <MainLayout>
       <div className="flex flex-col h-[calc(100vh-0rem)]">
@@ -106,7 +111,7 @@ export default function SymptomCheckerUI() {
                 <span className="mr-2"></span>AvaCare
               </h1>
               <p className="text-black mt-2">
-                Welcome back, {session?.user?.name?.split(' ')[0]}! Advanced symptom analysis
+                Welcome back, {user?.firstName}! Advanced symptom analysis
               </p>
             </div>
             {!userLocation ? (

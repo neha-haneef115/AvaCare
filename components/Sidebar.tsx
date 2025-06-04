@@ -2,8 +2,6 @@
 import React, { useState, useEffect } from "react";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from "next-auth/react";
-import { useAutoAuth } from "@/hooks/useAutoAuth";
 import { 
   Home, 
   MapPin, 
@@ -14,12 +12,14 @@ import {
   User,
   Loader2
 } from "lucide-react";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
-  const { session, isLoading, isAuthenticated } = useAutoAuth();
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
 
   useEffect(() => {
     const checkIfMobile = () => setIsMobile(window.innerWidth < 768);
@@ -33,7 +33,7 @@ const Sidebar = () => {
   const isActive = (path: string) => pathname === path;
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut();
   };
 
   const navigationItems = [
@@ -44,19 +44,19 @@ const Sidebar = () => {
   ];
 
   // Show loading state while authentication is being processed
-  if (isLoading) {
+  if (!isLoaded) {
     return (
       <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
         <div className="text-center">
           <Loader2 className="animate-spin h-8 w-8 mx-auto mb-4" />
-          <p className="text-gray-600">Authenticating...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
   // Don't render sidebar if not authenticated
-  if (!isAuthenticated) {
+  if (!user) {
     return null;
   }
 
@@ -85,12 +85,12 @@ const Sidebar = () => {
         </div>
 
         {/* User Info Section */}
-        {sidebarOpen && session?.user && (
+        {sidebarOpen && user && (
           <div className="px-4 pb-4">
             <div className="flex items-center space-x-3 p-3 bg-[#f8fed5] rounded-lg border-2 border-black">
-              {session.user.image ? (
+              {user.imageUrl ? (
                 <img 
-                  src={session.user.image} 
+                  src={user.imageUrl} 
                   alt="Profile" 
                   className="w-8 h-8 rounded-full border-2 border-black"
                 />
@@ -99,10 +99,10 @@ const Sidebar = () => {
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-black truncate">
-                  {session.user.name}
+                  {user.fullName}
                 </p>
                 <p className="text-xs text-gray-600 truncate">
-                  {session.user.email}
+                  {user.primaryEmailAddress?.emailAddress}
                 </p>
               </div>
             </div>

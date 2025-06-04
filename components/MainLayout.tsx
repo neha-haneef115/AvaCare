@@ -1,5 +1,5 @@
 "use client";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Sidebar from './Sidebar';
@@ -9,19 +9,19 @@ interface MainLayoutProps {
 }
 
 const MainLayout = ({ children }: MainLayoutProps) => {
-  const { data: session, status } = useSession();
+  const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "loading") return;
+    if (!isLoaded) return; // Still loading
     
-    if (!session) {
-      router.push('/auth/signin');
+    if (!isSignedIn) {
+      router.push('/sign-in'); // Clerk's default sign-in route
     }
-  }, [session, status, router]);
+  }, [isSignedIn, isLoaded, router]);
 
-  // Don't render anything if not authenticated
-  if (status === "loading" || !session) {
+  // Don't render anything if not authenticated or still loading
+  if (!isLoaded || !isSignedIn) {
     return null;
   }
 

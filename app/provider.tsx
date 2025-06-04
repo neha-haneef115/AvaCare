@@ -1,5 +1,5 @@
 "use client";
-import { SessionProvider } from "next-auth/react";
+import { ClerkProvider } from "@clerk/nextjs";
 import { ReactNode } from "react";
 
 interface ProvidersProps {
@@ -8,8 +8,8 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <SessionProvider>
+    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
       {children}
-    </SessionProvider>
+    </ClerkProvider>
   );
 }

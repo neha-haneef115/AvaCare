@@ -1,19 +1,19 @@
 "use client";
-import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;
 }
 
 const LayoutWrapper = ({ children }: LayoutWrapperProps) => {
-  const { status } = useSession();
+  const { isLoaded } = useUser();
   const pathname = usePathname();
   
   // Don't show loading on auth pages
   const isAuthPage = pathname?.startsWith('/auth');
   
-  if (status === "loading" && !isAuthPage) {
+  if (!isLoaded && !isAuthPage) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f9f9f7]">
         <div className="text-center">
