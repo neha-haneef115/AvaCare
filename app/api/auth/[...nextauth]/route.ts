@@ -1,6 +1,5 @@
-import { handlers } from "@/lib/auth"
 
-export const { GET, POST } = handlers
+import { handlers } from "@/lib/auth";
 
-// Add runtime configuration for debugging
-export const runtime = 'nodejs'
+export const { GET, POST } = handlers;
+export const runtime = 'nodejs'; 
