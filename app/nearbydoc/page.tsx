@@ -1,9 +1,7 @@
-// app/doctors/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
-import Footer from '@/components/Footer';
 import MainLayout from '@/components/MainLayout';
-import { Star, Phone, Calendar, MapPin, Loader2, Navigation } from 'lucide-react';
+import { Star,  Loader2, Navigation, MapPin } from 'lucide-react';
 
 interface Doctor {
   id: number;
@@ -26,7 +24,6 @@ export default function DoctorsPage() {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-  const [searchRadius, setSearchRadius] = useState<number>(25);
 
   const detectLocation = async (): Promise<void> => {
     setLoading(true);
@@ -81,8 +78,7 @@ export default function DoctorsPage() {
         body: JSON.stringify({
           latitude: lat,
           longitude: lng,
-          city: city,
-          radius: searchRadius
+          city: city
         }),
       });
 
@@ -100,36 +96,19 @@ export default function DoctorsPage() {
     }
   };
 
-  const handleCall = (doctorName: string): void => {
-    alert(`Calling ${doctorName}...`);
-  };
-
-  const handleBook = (doctorName: string): void => {
-    alert(`Booking appointment with ${doctorName}...`);
-  };
-
-  const handleRadiusChange = async (newRadius: number): Promise<void> => {
-    if (userLocation) {
-      setSearchRadius(newRadius);
-      setLoading(true);
-      await fetchNearbyDoctors(userLocation.latitude, userLocation.longitude, userLocation.city || '');
-      setLoading(false);
-    }
-  };
-
   return (
     <MainLayout>
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#f8fed5]">
-        {/* Header - Fixed */}
-        <header className="bg-white border-b-2 border-black p-6 flex-shrink-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        
+        <header className="bg-black  border-b-2 border-black p-6 flex-shrink-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center mb-6">
-              <div className="p-3 bg-[#e0f081] rounded-lg mr-4 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                <MapPin className="text-black" size={28} /> 
-              </div>
+               <div className="p-2 md:p-3 bg-white/20 mr-3 dark:bg-gray-600/20 rounded-xl">
+                              <MapPin className="h-6 w-6 md:h-8 md:w-8 text-white dark:text-white" />
+                            </div>
               <div>
-                <h1 className="text-3xl font-bold text-black">Nearby Doctors</h1>
-                <p className="text-black font-medium text-lg">Find healthcare providers in your area</p>
+                <h1 className="text-3xl font-bold text-white">Nearby Doctors</h1>
+                <p className="text-white font-medium text-lg">Find healthcare providers in your area</p>
               </div>
             </div>
             
@@ -140,7 +119,7 @@ export default function DoctorsPage() {
                   disabled={loading}
                   className="flex items-center px-6 py-4 
                            text-black font-bold rounded-lg 
-                           border-2 border-black bg-[#f8fed5]
+                           border-2 border-white bg-[#f5ff23]
                            shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
                            hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
                            hover:translate-x-[2px] hover:translate-y-[2px] 
@@ -155,53 +134,29 @@ export default function DoctorsPage() {
                   {loading ? 'Detecting Location...' : 'Find Doctors Near Me'}
                 </button>
               ) : (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center px-6 py-3 bg-[#e0f081] text-black rounded-lg 
-                                   border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                      <MapPin size={18} className="mr-3" /> 
-                      <span className="font-bold">
-                        {userLocation.city} • {doctors.length} doctors found
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setUserLocation(null);
-                        setDoctors([]);
-                        setError('');
-                      }}
-                      className="px-4 py-2 text-black font-bold rounded-lg 
-                               border-2 border-black bg-[#f8fed5]
-                               shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
-                               hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] 
-                               hover:translate-x-[1px] hover:translate-y-[1px] 
-                               hover:bg-[#e0f081] transition-all"
-                    >
-                      Change Location
-                    </button>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center px-6 py-3 bg-[#e0f081] text-black rounded-lg 
+                                 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                    <MapPin size={18} className="mr-3" /> 
+                    <span className="font-bold">
+                      {userLocation.city} • {doctors.length} doctors found
+                    </span>
                   </div>
-                  
-                  {/* Search Radius Selector */}
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <span className="text-lg font-bold text-black">Search Radius:</span>
-                    <div className="flex gap-3">
-                      {[10, 25, 50, 100].map((radius: number) => (
-                        <button
-                          key={radius}
-                          onClick={() => handleRadiusChange(radius)}
-                          disabled={loading}
-                          className={`px-4 py-2 text-black font-bold rounded-lg 
-                                     border-2 border-black transition-all
-                                     ${searchRadius === radius
-                                       ? 'bg-[#e0f081] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
-                                       : 'bg-[#f8fed5] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:bg-[#e0f081]'
-                                     } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                          {radius}km
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => {
+                      setUserLocation(null);
+                      setDoctors([]);
+                      setError('');
+                    }}
+                    className="px-4 py-2 text-black font-bold rounded-lg 
+                             border-2 border-black bg-[#f8fed5]
+                             shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
+                             hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] 
+                             hover:translate-x-[1px] hover:translate-y-[1px] 
+                             hover:bg-[#e0f081] transition-all"
+                  >
+                    Change Location
+                  </button>
                 </div>
               )}
             </div>
@@ -244,11 +199,7 @@ export default function DoctorsPage() {
                     <MapPin className="text-black" size={32} />
                   </div>
                   <h3 className="text-xl font-bold text-black mb-2">No doctors found</h3>
-                  <p className="text-black font-medium mb-4">Try expanding your search radius or check your location settings.</p>
-                  <div className="text-sm font-bold text-black bg-[#f8fed5] px-4 py-2 rounded-lg 
-                                 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                    Current search radius: {searchRadius}km
-                  </div>
+                  <p className="text-black font-medium">Try checking your location settings or contact support for assistance.</p>
                 </div>
               </div>
             )}
@@ -265,12 +216,7 @@ export default function DoctorsPage() {
                 >
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="font-bold text-lg text-black leading-tight pr-2">{doctor.Name}</h3>
-                    {doctor.distance !== undefined && doctor.distance > 0 && (
-                      <span className="text-xs bg-[#e0f081] text-black px-3 py-1 rounded-full 
-                                     font-bold border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                        {doctor.distance}km
-                      </span>
-                    )}
+                    
                   </div>
                   
                   <div className="space-y-3 mb-5">
@@ -286,48 +232,19 @@ export default function DoctorsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center mb-5 p-3 bg-yellow-200 rounded-lg 
+                  <div className="flex items-center p-3 bg-yellow-200 rounded-lg 
                                  border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                     <Star className="text-black mr-2" size={16} fill="currentColor" />
                     <span className="text-sm font-bold text-black">{doctor.Rating.toFixed(1)}</span>
                     <span className="text-black mx-2 font-bold">•</span>
                     <span className="text-sm text-black font-medium">{doctor.Category}</span>
                   </div>
-
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => handleCall(doctor.Name)}
-                      className="flex-1 flex items-center justify-center px-3 py-3 
-                               text-black font-bold rounded-lg 
-                               border-2 border-black bg-green-200
-                               shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
-                               hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] 
-                               hover:translate-x-[1px] hover:translate-y-[1px] 
-                               hover:bg-green-300 transition-all"
-                    >
-                      <Phone size={16} className="mr-2" />
-                      <span className="text-sm">Call</span>
-                    </button>
-                    <button
-                      onClick={() => handleBook(doctor.Name)}
-                      className="flex-1 flex items-center justify-center px-3 py-3 
-                               text-black font-bold rounded-lg 
-                               border-2 border-black bg-blue-200
-                               shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
-                               hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] 
-                               hover:translate-x-[1px] hover:translate-y-[1px] 
-                               hover:bg-blue-300 transition-all"
-                    >
-                      <Calendar size={16} className="mr-2" />
-                      <span className="text-sm">Book</span>
-                    </button>
-                  </div>
                 </div>
               ))}
             </div>
           </div>
         </main>
-      <Footer/></div>
+      </div>
 
     </MainLayout>
   );

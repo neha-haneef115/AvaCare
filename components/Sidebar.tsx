@@ -2,26 +2,27 @@
 import React, { useState, useEffect } from "react";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { 
   Home, 
   MapPin, 
   FileText,
   MessageSquare, 
-  LogOut,
+  Sun,
+  Moon,
   Menu,
-  User,
-  Loader2
+  User
 } from "lucide-react";
-import { useUser, useClerk } from "@clerk/nextjs";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
-  const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
+    setMounted(true);
     const checkIfMobile = () => setIsMobile(window.innerWidth < 768);
     checkIfMobile();
     window.addEventListener('resize', checkIfMobile);
@@ -32,8 +33,8 @@ const Sidebar = () => {
   const closeSidebarOnMobileNav = () => isMobile && setSidebarOpen(false);
   const isActive = (path: string) => pathname === path;
 
-  const handleLogout = async () => {
-    await signOut();
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   const navigationItems = [
@@ -43,20 +44,8 @@ const Sidebar = () => {
     { href: "/contact", icon: MessageSquare, label: "Contact" },
   ];
 
-  // Show loading state while authentication is being processed
-  if (!isLoaded) {
-    return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
-        <div className="text-center">
-          <Loader2 className="animate-spin h-8 w-8 mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render sidebar if not authenticated
-  if (!user) {
+  // Prevent hydration mismatch
+  if (!mounted) {
     return null;
   }
 
@@ -67,45 +56,27 @@ const Sidebar = () => {
       )}
 
       <div className={`
-        fixed md:relative inset-y-0 left-0 z-50 bg-white border-r-2 border-black 
+        fixed md:relative inset-y-0 left-0 z-50 bg-white dark:bg-gray-900 border-r-2 border-black dark:border-gray-700
         transition-all duration-300 ease-in-out h-screen
         ${isMobile ? 'w-64' : sidebarOpen ? 'w-64' : 'w-20'}
         ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}
       `}>
-        <div className="p-4 bg-white flex justify-between items-center">
+        <div className="p-4 bg-white dark:bg-gray-900 flex justify-between items-center">
           <button
             onClick={toggleSidebar}
-            className="p-2 bg-[#f8fed5] text-black font-bold rounded-lg 
-                     border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
-                     hover:bg-[#e0f081] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
+            className="p-2 bg-[#f8fed5] dark:bg-gray-700 text-black dark:text-white font-bold rounded-lg 
+                     border-2 border-black dark:border-gray-500 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(156,163,175,1)]
+                     hover:bg-[#e0f081] dark:hover:bg-gray-600 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)]
                      hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
           >
             <Menu size={18} />
           </button>
         </div>
 
-        {/* User Info Section */}
-        {sidebarOpen && user && (
+        {/* User Info Section (Static placeholder since no auth) */}
+        {sidebarOpen && (
           <div className="px-4 pb-4">
-            <div className="flex items-center space-x-3 p-3 bg-[#f8fed5] rounded-lg border-2 border-black">
-              {user.imageUrl ? (
-                <img 
-                  src={user.imageUrl} 
-                  alt="Profile" 
-                  className="w-8 h-8 rounded-full border-2 border-black"
-                />
-              ) : (
-                <User size={20} className="text-gray-600" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-black truncate">
-                  {user.fullName}
-                </p>
-                <p className="text-xs text-gray-600 truncate">
-                  {user.primaryEmailAddress?.emailAddress}
-                </p>
-              </div>
-            </div>
+            
           </div>
         )}
   
@@ -116,11 +87,14 @@ const Sidebar = () => {
               <Link key={item.href} href={item.href} passHref>
                 <button 
                   className={`flex items-center w-full px-4 py-3 my-4
-                           text-black font-bold rounded-lg 
-                           border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
-                           hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
+                           text-black dark:text-white font-bold rounded-lg 
+                           border-2 border-black dark:border-gray-500 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(156,163,175,1)]
+                           hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)]
                            hover:translate-x-[2px] hover:translate-y-[2px] transition-all
-                           ${isActive(item.href) ? 'bg-[#e0f081]' : 'bg-[#f8fed5] hover:bg-[#e0f081]'}`}
+                           ${isActive(item.href) 
+                             ? 'bg-[#e0f081] dark:bg-gray-600' 
+                             : 'bg-[#f8fed5] dark:bg-gray-700 hover:bg-[#e0f081] dark:hover:bg-gray-600'
+                           }`}
                   onClick={closeSidebarOnMobileNav}
                 >
                   <Icon className={`${sidebarOpen ? 'mr-3' : 'mx-auto'}`} size={18} />
@@ -131,27 +105,15 @@ const Sidebar = () => {
           })}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <button 
-            onClick={handleLogout}
-            className="flex items-center justify-center w-full px-4 py-3 
-                     bg-[#f8fed5] text-black font-bold rounded-lg 
-                     border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
-                     hover:bg-[#ff6b6b] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
-                     hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
-          >
-            <LogOut className={`${sidebarOpen ? 'mr-3' : 'mx-auto'}`} size={18} />
-            {sidebarOpen && "Logout"}
-          </button>
-        </div>
+      
       </div>
 
       {isMobile && !sidebarOpen && (
         <button
           onClick={toggleSidebar}
-          className="fixed top-4 left-4 z-50 p-2 bg-[#f8fed5] text-black font-bold rounded-lg 
-                   border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
-                   hover:bg-[#e0f081] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
+          className="fixed top-4 left-4 z-50 p-2 bg-[#f8fed5] dark:bg-gray-700 text-black dark:text-white font-bold rounded-lg 
+                   border-2 border-black dark:border-gray-500 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(156,163,175,1)]
+                   hover:bg-[#e0f081] dark:hover:bg-gray-600 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)]
                    hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
         >
           <Menu size={18} />

@@ -1,7 +1,6 @@
-// app/page.tsx
 "use client";
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import {Stethoscope} from "lucide-react";
 import MainLayout from '@/components/MainLayout';
 import ChatBox from '@/components/Chatbot'; 
 import Footer from "@/components/Footer";
@@ -59,7 +58,7 @@ interface Report {
 }
 
 export default function SymptomCheckerUI() {
-  const { user, isLoaded, isSignedIn } = useUser();
+
   const [showResults, setShowResults] = useState(false);
   const [userLocation, setUserLocation] = useState(false);
   const [userCoordinates, setUserCoordinates] = useState<{
@@ -77,7 +76,7 @@ export default function SymptomCheckerUI() {
           setUserCoordinates({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-            city: "Unknown" // You might want to implement reverse geocoding here
+            city: "Unknown" 
           });
         },
         (error) => {
@@ -95,24 +94,18 @@ export default function SymptomCheckerUI() {
     setShowResults(true);
   };
 
-  // Loading state handled by LayoutWrapper, but we can add additional check here if needed
-  if (!isLoaded || !isSignedIn) {
-    return null; // LayoutWrapper will handle loading/auth redirect
-  }
-
   return (
     <MainLayout>
       <div className="flex flex-col h-[calc(100vh-0rem)]">
-        {/* Header */}
+        
         <header className="bg-white border-b-2 border-black p-4">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold flex items-center">
+              <Stethoscope/>
                 <span className="mr-2"></span>AvaCare
               </h1>
-              <p className="text-black mt-2">
-                Welcome back, {user?.firstName}! Advanced symptom analysis
-              </p>
+              <h3 className="text-black font-bold dark:text-gray-300 text-xs md:text-sm">Driven results with up to 90% accuracy</h3>
             </div>
             {!userLocation ? (
               <button
@@ -137,17 +130,13 @@ export default function SymptomCheckerUI() {
           </div>
         </header>
 
-        {/* Chat and Results */}
-        <main className="flex-1 overflow-y-auto p-4 pb-6 bg-gradient-to-br from-blue-50 to-green-50">
-          {/* Enhanced ChatBox Component */}
+        <main className="flex-1 overflow-y-auto p-4 bg-white">
           <ChatBox onAnalysisComplete={handleAnalysisComplete} />
 
-          {/* AnalysisResults Component */}
           {showResults && analysisResults && (
             <AnalysisResults analysisResults={analysisResults} />
           )}
 
-          {/* NearbyDoctors Component */}
           <NearbyDoctors 
             userLocation={userLocation}
             onLocationDetect={handleLocationDetection}

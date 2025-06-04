@@ -100,16 +100,16 @@ export default function ContactPage() {
   return (
     <MainLayout>
       <div className="flex-1 flex flex-col min-h-screen overflow-y-auto">
-        {/* Header */}
-        <header className="bg-white border-b-2 border-black p-6">
+      
+        <header className="bg-black text-white border-b-2 border-black p-6">
 <div className="max-w-6xl mx-auto text-center">
     <h1 className="text-4xl font-black mb-2">Contact Us</h1>
-    <p className="text-lg font-medium text-gray-700 mb-4">
+    <p className="text-lg font-medium text-white mb-4">
       Get in touch with us - we're here to help!
     </p>
-    <div className="flex flex-col sm:flex-row justify-center items-center gap-5 text-gray-600">
+    <div className="flex flex-col sm:flex-row justify-center items-center gap-5 text-white">
 <div className="flex items-center gap-2 ">
-      <MdEmail className="w-6 h-6 text-grey-600" />
+      <MdEmail className="w-6 h-6 text-white" />
       <div>
       
       nehahaneef203@gmail.com
@@ -119,38 +119,38 @@ export default function ContactPage() {
       href="https://wa.me/923257220057" 
       className="flex items-center gap-2 hover:underline"
     >
-      <IoLogoWhatsapp className="w-6 h-6 text-grey-600" />
+      <IoLogoWhatsapp className="w-6 h-6 text-white" />
       <div>
        
-        <p className="text-gray-700">+92 325 7220057</p>
+        <p className="text-white">+92 325 7220057</p>
       </div>
     </Link>
 
-    {/* LinkedIn */}
+    
     <Link 
       href="https://www.linkedin.com/in/neha-haneef115" 
       className="flex items-center gap-2 hover:underline"
       target="_blank"
       rel="noopener noreferrer"
     >
-      <TiSocialLinkedin className="w-6 h-6 text-grey-600" />
+      <TiSocialLinkedin className="w-6 h-6 text-white" />
       <div>
        
-        <p className="text-gray-700">@neha-haneef115</p>
+        <p className="text-white">@neha-haneef115</p>
       </div>
     </Link>
     </div>
   </div>
 </header>
-        {/* Main Content */}
-        <main className="flex-1 bg-gradient-to-br from-blue-50 to-green-50 p-6">
+      
+        <main className="flex-1 bg-white p-6">
           <div className="max-w-6xl mx-auto">
             
-            {/* Contact Methods Grid */}
+            
             
 
             <div className="grid lg:grid-cols-2 gap-8">
-              {/* Contact Form */}
+              
               <div className="bg-white border-2 border-black rounded-lg overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
                 <div className="p-4 bg-[#f8fed5] border-b-2 border-black">
                   <h2 className="text-xl font-bold">Send us a Message</h2>
@@ -305,9 +305,9 @@ export default function ContactPage() {
             </div>
           </div>
           
+       <Footer/>
         </main>
 
-       <Footer/>
       </div>
     </MainLayout>
   );

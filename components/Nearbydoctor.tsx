@@ -7,6 +7,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { useState, useEffect } from 'react';
+import { FaUserDoctor } from "react-icons/fa6";
 
 interface Doctor {
   id: number;
@@ -307,25 +308,29 @@ export default function NearbyDoctors({
     }
   };
 
-  const formatDistance = (distance: number) => {
-    if (distance < 1) {
-      return `${Math.round(distance * 10 * 1609.34) / 10} m`; // Convert km to meters
-    }
-    return `${distance.toFixed(1)} km`;
-  };
+  
 
   return (
-    <div className="max-w-4xl mx-auto bg-white border-2 border-black rounded-lg overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-      <div className="p-4 bg-[#f8fed5] border-b-2 border-black">
-        <h2 className="text-lg font-bold">Recommended Healthcare Providers</h2>
+    <div className="max-w-5xl mt-10 mx-auto bg-white border-2 border-black rounded-lg overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="p-4 bg-black text-white border-b-2 border-black">
+        <div className="flex items-center space-x-3">
+                     <div className="p-2 md:p-3 bg-white/20 dark:bg-gray-600/20 rounded-xl">
+                       <FaUserDoctor className="h-6 w-6 md:h-8 md:w-8 text-white dark:text-white" />
+                     </div>
+                     <div>
+                       <h1 className="text-xl md:text-2xl font-bold">Recommended Healthcare Providers</h1>
+                      
         <p className="text-sm font-medium">
           {userLocation ? 
             `Based on your symptoms: ${conditions.map(c => c.name).join(', ')}` : 
             "Enable location to find doctors near you"}
         </p>
+                     </div>
+        
+                   </div>
         {userLocation && conditions.length > 0 && (
-          <p className="text-xs text-gray-600 mt-1">
-            Showing specialists and general physicians for your conditions
+          <p className="text-xs text-gray-100 mt-3">
+            Suggested doctors will appear based on your reported symptoms.
           </p>
         )}
       </div>
@@ -367,7 +372,7 @@ export default function NearbyDoctors({
           </div>
         ) : doctors.length === 0 ? (
           <div className="text-center py-8">
-            <p>No doctors found matching your condition in your area.</p>
+            <p>Suggested doctors will appear based on your reported symptoms.</p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
@@ -385,36 +390,12 @@ export default function NearbyDoctors({
                 <div className="flex items-center text-sm font-medium my-3">
                   <Star className="text-yellow-500 mr-1" size={14} />
                   <span>{doctor.Rating}</span>
-                  <span className="mx-2 text-gray-400">•</span>
-                  <span className="text-gray-600">{formatDistance(doctor.distance)}</span>
+                 
                 </div>
                 
-                <div className={`text-xs font-bold mb-4 ${doctor.available ? "text-green-600" : "text-gray-500"}`}>
-                  {doctor.available ? `✅ Available ${doctor.nextAvailable}` : `⏰ Next available ${doctor.nextAvailable}`}
-                </div>
                 
-                <div className="flex gap-2">
-                  <button className="flex-1 py-2 
-                                   bg-[#f8fed5] text-black font-bold rounded-lg 
-                                   border-2 border-black 
-                                   shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
-                                   hover:bg-[#e0f081] 
-                                   hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] 
-                                   hover:translate-x-[1px] hover:translate-y-[1px] 
-                                   transition-all text-xs">
-                    <Phone className="mr-1 inline" size={12} /> Call
-                  </button>
-                  <button
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold border-2 border-black ${
-                      doctor.available
-                        ? "bg-[#f5ff23] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#E5Ef20] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
-                        : "bg-gray-200 cursor-not-allowed"
-                    }`}
-                    disabled={!doctor.available}
-                  >
-                    <Calendar className="mr-1 inline" size={12} /> Book
-                  </button>
-                </div>
+                
+                
               </div>
             ))}
           </div>

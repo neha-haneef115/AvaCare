@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Send, Tag, Heart } from "lucide-react";
+import { Send, Tag, Stethoscope, Activity, AlertCircle, Clock, User, Bot } from "lucide-react";
 
 interface Message {
   id: number;
   text: string;
   sender: "user" | "bot";
   tags?: string[];
+  timestamp?: string;
 }
 
 interface AnalysisResult {
@@ -41,8 +42,9 @@ export default function ChatBox({ onAnalysisComplete }: ChatBoxProps) {
     setMessages([
       {
         id: 1,
-        text: "Hello! I'm symptom checker. Please describe your main symptom or health concern in detail.",
-        sender: "bot"
+        text: "Hello! I'm your AI-powered health assistant. Please describe your main symptom or health concern in detail. I'll ask you a series of questions to better understand your condition.",
+        sender: "bot",
+        timestamp: new Date().toLocaleTimeString()
       }
     ]);
   }, []);
@@ -83,7 +85,6 @@ export default function ChatBox({ onAnalysisComplete }: ChatBoxProps) {
     const symptomLower = symptom.toLowerCase();
     let tags: string[] = [];
 
-    // Only show 4-6 most relevant tags based on main symptom
     if (symptomLower.includes('pain') || symptomLower.includes('hurt')) {
       tags = ["Sharp pain", "Dull ache", "Severe (8-10)", "Moderate (4-7)"];
     } else if (symptomLower.includes('headache') || symptomLower.includes('head')) {
@@ -156,7 +157,6 @@ Return exactly 3-4 conditions ranked by clinical probability. JSON only.`;
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         if (parsed.conditions && parsed.conditions.length >= 3) {
-          // Ensure we have exactly 3-4 conditions
           parsed.conditions = parsed.conditions.slice(0, 4);
           return parsed;
         }
@@ -165,7 +165,6 @@ Return exactly 3-4 conditions ranked by clinical probability. JSON only.`;
       throw new Error("Invalid response format");
     } catch (error) {
       console.error('Error analyzing symptoms:', error);
-      // Better fallback with actual medical reasoning
       return {
         conditions: [
           {
@@ -231,7 +230,6 @@ Focus on the most diagnostically important question based on their symptoms. No 
       const response = await callGeminiAPI(questionPrompt);
       return response.trim().replace(/['"]/g, '');
     } catch (error) {
-      // More comprehensive fallback questions based on interview stage
       const clinicalQuestions = [
         "When did this symptom first start - today, yesterday, or longer ago?",
         "How would you rate the severity from 1-10 right now?", 
@@ -248,7 +246,6 @@ Focus on the most diagnostically important question based on their symptoms. No 
   };
 
   const shouldAnalyze = (count: number, message: string) => {
-    // Increase minimum questions for better accuracy
     const analysisKeywords = ['analyze', 'diagnose', 'what is it', 'ready', 'enough questions', 'diagnosis'];
     return count >= 7 || analysisKeywords.some(keyword => message.toLowerCase().includes(keyword));
   };
@@ -256,7 +253,7 @@ Focus on the most diagnostically important question based on their symptoms. No 
   const handleTagSelect = (tag: string) => {
     if (selectedTags.includes(tag)) {
       setSelectedTags(prev => prev.filter(t => t !== tag));
-    } else if (selectedTags.length < 3) { // Limit to 3 tags
+    } else if (selectedTags.length < 3) {
       setSelectedTags(prev => [...prev, tag]);
     }
   };
@@ -268,7 +265,8 @@ Focus on the most diagnostically important question based on their symptoms. No 
       id: messages.length + 1,
       text: inputMessage,
       sender: "user",
-      tags: [...selectedTags]
+      tags: [...selectedTags],
+      timestamp: new Date().toLocaleTimeString()
     };
 
     setMessages(prev => [...prev, newMessage]);
@@ -284,7 +282,6 @@ Focus on the most diagnostically important question based on their symptoms. No 
     setInputMessage("");
     setIsAnalyzing(true);
 
-    // Show relevant tags after first message
     if (questionCount === 0) {
       const tags = getRelevantTags(currentInput);
       if (tags.length > 0) {
@@ -298,7 +295,8 @@ Focus on the most diagnostically important question based on their symptoms. No 
         const analysisMessage: Message = {
           id: messages.length + 2,
           text: "Analyzing your symptoms using advanced clinical diagnostic protocols. This may take a moment...",
-          sender: "bot"
+          sender: "bot",
+          timestamp: new Date().toLocaleTimeString()
         };
         
         setMessages(prev => [...prev, analysisMessage]);
@@ -313,7 +311,8 @@ Focus on the most diagnostically important question based on their symptoms. No 
         const botMessage: Message = {
           id: messages.length + 2,
           text: question,
-          sender: "bot"
+          sender: "bot",
+          timestamp: new Date().toLocaleTimeString()
         };
         
         setMessages(prev => [...prev, botMessage]);
@@ -324,7 +323,8 @@ Focus on the most diagnostically important question based on their symptoms. No 
       const errorMessage: Message = {
         id: messages.length + 2,
         text: "I'm having trouble processing your request. Please consult a healthcare professional for proper evaluation.",
-        sender: "bot"
+        sender: "bot",
+        timestamp: new Date().toLocaleTimeString()
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -334,116 +334,197 @@ Focus on the most diagnostically important question based on their symptoms. No 
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white border-2 border-black rounded-lg overflow-hidden mb-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-      <div className="p-4 bg-[#f8fed5] border-b-2 border-black">
-        <h2 className="text-lg font-bold flex items-center">
-          
-          Symptom Checker
-        </h2>
-        <p className="text-sm mt-1 font-medium">Your personal health companion</p>
-      </div>
+    <div className="max-w-5xl text-white dark:text-white font-bold rounded-lg border-2 border-black dark:border-gray-500 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] mx-auto">
       
-      <div className="h-80 overflow-y-auto p-4 space-y-3">
-        {messages.map((message) => (
-          <div key={message.id}>
-            <div className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-xs rounded-lg p-3 border-2 border-black font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
-                message.sender === "user" ? "bg-[#f8fed5]" : "bg-white"
-              }`}>
-                {message.text}
+      <div className="bg-black dark:bg-gray-700 rounded-t-md  border-b border-b-white p-4 md:p-6 text-white dark:text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10 dark:bg-white/5"></div>
+        <div className="relative z-10">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 md:p-3 bg-white/20 dark:bg-gray-600/20 rounded-xl">
+                <Stethoscope className="h-6 w-6 md:h-8 md:w-8 text-white dark:text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold">AI Health Assistant</h1>
+                <p className="text-white dark:text-gray-300 text-xs md:text-sm">Advanced symptom analysis powered by AI</p>
               </div>
             </div>
-            {message.tags && message.tags.length > 0 && (
-              <div className="flex justify-end mt-1">
-                <div className="flex gap-1">
-                  {message.tags.map((tag, index) => (
-                    <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded border">
-                      {tag}
-                    </span>
-                  ))}
+            <div className="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm">
+              <div className="flex items-center space-x-2 bg-white/20 dark:bg-gray-600/20 rounded-lg px-2 md:px-3 py-1 md:py-2">
+                <Activity className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Active Session</span>
+                <span className="sm:hidden">Active</span>
+              </div>
+              {questionCount > 0 && (
+                <div className="flex items-center space-x-2 bg-white/20 dark:bg-gray-600/20 rounded-lg px-2 md:px-3 py-1 md:py-2">
+                  <Clock className="h-3 w-3 md:h-4 md:w-4" />
+                  <span>{questionCount}/7+</span>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        ))}
+        </div>
+      </div>
+
+      <div className="rounded-b-2xl shadow-2xl border border-gray-200 dark:border-gray-600 overflow-hidden">
         
-        {isAnalyzing && (
-          <div className="flex justify-start">
-            <div className="bg-white border-2 border-black rounded-lg p-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-black rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
-              </div>
+        {questionCount > 0 && questionCount < 7 && (
+          <div className="bg-[#f8fed5] dark:bg-gray-700 px-4 md:px-6 py-3 border-b border-gray-200 dark:border-gray-600">
+            <div className="flex items-center justify-between text-xs md:text-sm text-black dark:text-white mb-2">
+              <span className="font-medium">Clinical Assessment Progress</span>
+              <span>{questionCount}/7 questions</span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+              <div 
+                className="bg-[#bccc5c] dark:bg-gray-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${(questionCount / 7) * 100}%` }}
+              ></div>
             </div>
           </div>
         )}
-      </div>
-
-      {/* Simplified Tag Selection */}
-      {showTags && suggestedTags.length > 0 && questionCount < 4 && (
-        <div className="p-3 bg-blue-50 border-t border-b-2 border-black">
-          <div className="flex items-center mb-2">
-            <Tag className="mr-2 text-blue-600" size={16} />
-            <span className="font-bold text-sm">Select details that apply (optional, max 3):</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {suggestedTags.map((tag, index) => (
-              <button
-                key={index}
-                onClick={() => handleTagSelect(tag)}
-                disabled={!selectedTags.includes(tag) && selectedTags.length >= 3}
-                className={`px-3 py-1 text-sm font-medium rounded border-2 transition-all ${
-                  selectedTags.includes(tag)
-                    ? "bg-blue-200 text-blue-800 border-blue-400"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-          {selectedTags.length > 0 && (
-            <div className="mt-2 text-xs text-blue-600">
-              Selected: {selectedTags.join(', ')}
+        
+        <div className="h-64 md:h-96 overflow-y-auto p-4 md:p-6 space-y-4 bg-white dark:bg-gray-800">
+          {messages.map((message) => (
+            <div key={message.id} className="space-y-2">
+              <div className={`flex items-end space-x-3 ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
+                {message.sender === "bot" && (
+                  <div className="flex-shrink-0 w-6 h-6 md:w-8 md:h-8 bg-[#f8fed5] dark:bg-gray-700 border-2 border-black dark:border-gray-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] rounded-full flex items-center justify-center">
+                    <Bot className="h-3 w-3 md:h-4 md:w-4 text-black dark:text-white" />
+                  </div>
+                )}
+                
+                <div className={`max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl rounded-2xl px-3 md:px-4 py-2 md:py-3 ${
+                  message.sender === "user" 
+                    ? "bg-[#f8fed5] dark:bg-gray-700 text-black dark:text-white border-2 border-black dark:border-gray-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] rounded-br-md" 
+                    : "bg-white dark:bg-gray-900 text-black dark:text-white border-2 border-black dark:border-gray-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] rounded-bl-md"
+                }`}>
+                  <p className="text-xs md:text-sm leading-relaxed">{message.text}</p>
+                  {message.timestamp && (
+                    <p className="text-xs mt-2 text-gray-600 dark:text-gray-400">
+                      {message.timestamp}
+                    </p>
+                  )}
+                </div>
+                
+                {message.sender === "user" && (
+                  <div className="flex-shrink-0 w-6 h-6 md:w-8 md:h-8 bg-[#e0f081] dark:bg-gray-600 border-2 border-black dark:border-gray-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] rounded-full flex items-center justify-center">
+                    <User className="h-3 w-3 md:h-4 md:w-4 text-black dark:text-white" />
+                  </div>
+                )}
+              </div>
+              
+              {message.tags && message.tags.length > 0 && (
+                <div className="flex justify-end">
+                  <div className="flex flex-wrap gap-1 max-w-xs sm:max-w-sm md:max-w-md">
+                    {message.tags.map((tag, index) => (
+                      <span key={index} className="px-2 py-1 bg-[#f8fed5] dark:bg-gray-700 text-black dark:text-white text-xs font-medium rounded-full border border-black dark:border-gray-500">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          
+          {isAnalyzing && (
+            <div className="flex items-end space-x-3">
+              <div className="flex-shrink-0 w-6 h-6 md:w-8 md:h-8 bg-[#f8fed5] dark:bg-gray-700 border-2 border-black dark:border-gray-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] rounded-full flex items-center justify-center">
+                <Bot className="h-3 w-3 md:h-4 md:w-4 text-black dark:text-white" />
+              </div>
+              <div className="bg-white dark:bg-gray-900 border-2 border-black dark:border-gray-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] rounded-2xl rounded-bl-md px-3 md:px-4 py-2 md:py-3">
+                <div className="flex items-center space-x-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-black dark:bg-white rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-black dark:bg-white rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                    <div className="w-2 h-2 bg-black dark:bg-white rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+                  </div>
+                  <span className="text-xs md:text-sm text-black dark:text-white">Analyzing symptoms...</span>
+                </div>
+              </div>
             </div>
           )}
         </div>
-      )}
-      
-      <div className="p-4 bg-[#f8fed5] border-t-2 border-black">
-        <div className="flex">
-          <input
-            type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Describe your symptoms clearly and specifically..."
-            className="flex-1 p-3 border-2 border-black rounded-l-lg focus:outline-none font-medium"
-            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            disabled={isAnalyzing}
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isAnalyzing}
-            className="px-4 bg-[#f5ff23] text-black font-bold border-2 border-black border-l-0 rounded-r-lg 
-                     shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
-                     hover:bg-[#E5Ef20] 
-                     hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] 
-                     hover:translate-x-[1px] hover:translate-y-[1px] 
-                     transition-all disabled:opacity-50"
-          >
-            <Send />
-          </button>
-        </div>
-        <div className="flex justify-between items-center mt-2">
-          <p className="text-xs text-gray-600 font-medium">
-            💡 Be specific about timing, location, severity, and triggers
-          </p>
-          {questionCount < 7 && (
-            <p className="text-xs text-blue-600 font-medium">
-              Clinical Interview: {questionCount + 1}/7+ questions
-            </p>
-          )}
+
+        {showTags && suggestedTags.length > 0 && questionCount < 4 && (
+          <div className="px-4 md:px-6 py-4 bg-[#f8fed5] dark:bg-gray-700 border-t border-black dark:border-gray-600">
+            <div className="flex items-center mb-3">
+              <div className="p-2 bg-white/20 dark:bg-gray-600/20 rounded-lg mr-3">
+                <Tag className="h-4 w-4 text-black dark:text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-black dark:text-white text-sm md:text-base">Add specific details</h3>
+                <p className="text-xs md:text-sm text-black dark:text-gray-300">Select up to 3 that best describe your symptoms</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {suggestedTags.map((tag, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleTagSelect(tag)}
+                  disabled={!selectedTags.includes(tag) && selectedTags.length >= 3}
+                  className={`px-3 md:px-4 py-2 text-xs md:text-sm font-medium rounded-full border-2 transition-all duration-200 ${
+                    selectedTags.includes(tag)
+                      ? "bg-[#e0f081] dark:bg-gray-600 text-black dark:text-white border-black dark:border-gray-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)]"
+                      : "bg-white dark:bg-gray-800 text-black dark:text-white border-black dark:border-gray-500 hover:bg-[#f8fed5] dark:hover:bg-gray-700 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50"
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+            {selectedTags.length > 0 && (
+              <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border-2 border-black dark:border-gray-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)]">
+                <p className="text-xs md:text-sm text-black dark:text-white">
+                  <strong>Selected:</strong> {selectedTags.join(', ')}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        <div className="p-4 md:p-6 bg-[#f8fed5] dark:bg-gray-700 border-t border-black dark:border-gray-600">
+          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder="Describe your symptoms in detail..."
+                className="w-full p-3 md:p-4 pr-10 md:pr-12 border-2 border-black dark:border-gray-500 rounded-xl bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] focus:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] dark:focus:shadow-[1px_1px_0px_0px_rgba(156,163,175,1)] focus:translate-x-[1px] focus:translate-y-[1px] transition-all duration-200 text-sm md:text-base"
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                disabled={isAnalyzing}
+              />
+             
+            </div>
+           
+
+<button
+  onClick={handleSendMessage}
+  disabled={!inputMessage.trim() || isAnalyzing}
+  className={`px-4 md:px-6 py-3 md:py-4 font-bold rounded-xl border-2 border-black dark:border-gray-500 transition-all duration-200 flex items-center justify-center space-x-2 ${
+    !inputMessage.trim() || isAnalyzing
+      ? "bg[#c6e300] dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,0.3)]"
+      : "bg-[ bg-[#f5ff23] ] text-black dark:text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] hover:bg-[#E5Ef20] dark:hover:bg-gray-600 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] hover:translate-x-[2px] hover:translate-y-[2px]"
+  }`}
+>
+  <Send className="h-4 w-4" />
+  <span className="hidden sm:inline text-sm md:text-base">Send</span>
+</button>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 space-y-2 sm:space-y-0 text-xs md:text-sm">
+            <div className="flex items-center space-x-2 text-black dark:text-gray-300">
+              <AlertCircle className="h-3 w-3 md:h-4 md:w-4" />
+              <span>Be specific about timing, location, severity, and triggers</span>
+            </div>
+            {questionCount < 7 && (
+              <div className="flex items-center space-x-2 text-black dark:text-white bg-white/20 dark:bg-gray-600/20 rounded-full px-3 py-1">
+                <Activity className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="font-medium">Assessment in progress</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
