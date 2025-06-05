@@ -7,39 +7,53 @@ if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env');
 }
 
-// Global variable to cache the connection
+// Global variable to cache the connection (important for Vercel serverless)
 let cachedClient: MongoClient | null = null;
 let cachedDb: Db | null = null;
 
 async function connectToDatabase() {
+  // Return cached connection if available
   if (cachedClient && cachedDb) {
-    return { client: cachedClient, db: cachedDb };
+    try {
+      // Test if connection is still alive
+      await cachedClient.db('admin').command({ ping: 1 });
+      return { client: cachedClient, db: cachedDb };
+    } catch (error) {
+      console.log('Cached connection failed, creating new connection');
+      cachedClient = null;
+      cachedDb = null;
+    }
   }
 
   const client = new MongoClient(MONGODB_URI!, {
-    // Updated connection options for better SSL/TLS handling
-    maxPoolSize: 10,
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-    connectTimeoutMS: 10000,
+    // Optimized for Vercel serverless environment
+    maxPoolSize: 1, // Reduced for serverless
+    minPoolSize: 0,
+    maxIdleTimeMS: 10000, // Shorter for serverless
+    serverSelectionTimeoutMS: 10000, // Increased timeout
+    socketTimeoutMS: 30000,
+    connectTimeoutMS: 30000, // Increased timeout
+    
     // SSL/TLS configuration
     tls: true,
     tlsAllowInvalidCertificates: false,
     tlsAllowInvalidHostnames: false,
-    // Retry configuration
+    
+    // Essential for Atlas
     retryWrites: true,
     retryReads: true,
-    // Additional stability options
-    heartbeatFrequencyMS: 10000,
-    maxIdleTimeMS: 30000,
+    
+    // Reduced heartbeat for serverless
+    heartbeatFrequencyMS: 30000,
   });
 
   try {
+    console.log('Attempting to connect to MongoDB...');
     await client.connect();
     
     // Test the connection
     await client.db('admin').command({ ping: 1 });
-    console.log('Successfully connected to MongoDB');
+    console.log('Successfully connected to MongoDB Atlas');
     
     const db = client.db('doctorDB');
 
@@ -51,7 +65,11 @@ async function connectToDatabase() {
     console.error('MongoDB connection error:', error);
     // Close client on error to prevent connection leaks
     if (client) {
-      await client.close().catch(console.error);
+      try {
+        await client.close();
+      } catch (closeError) {
+        console.error('Error closing failed connection:', closeError);
+      }
     }
     throw error;
   }
@@ -138,6 +156,8 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('POST request received');
+    
     // Check if MONGODB_URI is defined
     if (!MONGODB_URI) {
       console.error('MONGODB_URI is not defined');
@@ -147,7 +167,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body: RequestBody = await request.json();
+    let body: RequestBody;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('Invalid JSON in request body:', error);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
     const { latitude, longitude, city, radius = 25, specialties } = body;
 
     if (!latitude || !longitude) {
@@ -157,9 +187,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Connecting to database...');
+    
     // Connect to database with error handling
     const { db } = await connectToDatabase();
     const collection: Collection<Doctor> = db.collection('doctors');
+
+    console.log('Database connected, querying doctors...');
 
     // Build the base query
     const baseQuery: any = {};
@@ -186,6 +220,7 @@ export async function POST(request: NextRequest) {
         .toArray();
       
       nearbyDoctors = sameCityDoctors;
+      console.log(`Found ${sameCityDoctors.length} doctors in same city`);
     }
 
     // Strategy 2: If no doctors in same city or we need more, find nearby cities
@@ -217,6 +252,7 @@ export async function POST(request: NextRequest) {
           .toArray();
 
         nearbyDoctors = [...nearbyDoctors, ...nearbyDoctorsFromOtherCities];
+        console.log(`Found ${nearbyDoctorsFromOtherCities.length} doctors in nearby cities`);
       }
     }
 
@@ -236,6 +272,7 @@ export async function POST(request: NextRequest) {
         .toArray();
 
       nearbyDoctors = [...nearbyDoctors, ...fallbackDoctors];
+      console.log(`Found ${fallbackDoctors.length} fallback doctors`);
     }
 
     // Add distance information to doctors (approximate)
@@ -262,6 +299,8 @@ export async function POST(request: NextRequest) {
       return a.distance - b.distance; // Closer distance first
     });
 
+    console.log(`Returning ${doctorsWithDistance.length} doctors`);
+
     return NextResponse.json({
       success: true,
       doctors: doctorsWithDistance.slice(0, 20), // Limit to 20 results
@@ -286,7 +325,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Failed to fetch nearby doctors',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
     );
@@ -296,49 +336,48 @@ export async function POST(request: NextRequest) {
 // GET method for testing
 export async function GET() {
   try {
-    // Test database connection with retry logic
-    let retryCount = 0;
-    const maxRetries = 3;
+    console.log('GET request received - testing connection');
     
-    while (retryCount < maxRetries) {
-      try {
-        const { db } = await connectToDatabase();
-        const collection: Collection = db.collection('doctors');
-        const count = await collection.countDocuments({});
-        
-        return NextResponse.json({
-          message: 'Doctors API is working. Use POST method to search for nearby doctors.',
-          databaseStatus: 'Connected',
-          totalDoctors: count,
-          requiredFields: ['latitude', 'longitude', 'city'],
-          optionalFields: ['radius (default: 25km)', 'specialties (array of strings)'],
-          example: {
-            latitude: 24.8607,
-            longitude: 67.0011,
-            city: 'Karachi',
-            radius: 25,
-            specialties: ['Cardiologist', 'Dermatologist']
-          }
-        });
-      } catch (error) {
-        retryCount++;
-        if (retryCount >= maxRetries) {
-          throw error;
-        }
-        // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+    // Test database connection
+    const { db } = await connectToDatabase();
+    const collection: Collection = db.collection('doctors');
+    
+    console.log('Connected to database, counting documents...');
+    const count = await collection.countDocuments({});
+    console.log(`Found ${count} doctors in database`);
+    
+    return NextResponse.json({
+      message: 'Doctors API is working! Use POST method to search for nearby doctors.',
+      databaseStatus: 'Connected ✅',
+      totalDoctors: count,
+      timestamp: new Date().toISOString(),
+      requiredFields: ['latitude', 'longitude', 'city'],
+      optionalFields: ['radius (default: 25km)', 'specialties (array of strings)'],
+      example: {
+        latitude: 24.8607,
+        longitude: 67.0011,
+        city: 'Karachi',
+        radius: 25,
+        specialties: ['Cardiologist', 'Dermatologist']
       }
-    }
+    });
   } catch (error) {
     console.error('Database connection test failed:', error);
+    
+    // Log additional debugging info
+    console.error('MongoDB URI exists:', !!MONGODB_URI);
+    console.error('MongoDB URI prefix:', MONGODB_URI?.substring(0, 20));
+    
     return NextResponse.json(
       { 
         message: 'API route exists but database connection failed',
         error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
         troubleshooting: {
-          'SSL Error': 'Try updating your MongoDB connection string or check Atlas network settings',
-          'IP Whitelist': 'Ensure your IP is whitelisted in MongoDB Atlas',
-          'Credentials': 'Verify username and password are correct'
+          'Step 1': 'Check MongoDB Atlas Network Access - whitelist 0.0.0.0/0 for Vercel',
+          'Step 2': 'Verify MONGODB_URI in Vercel environment variables',
+          'Step 3': 'Ensure MongoDB Atlas cluster is not paused',
+          'Step 4': 'Check MongoDB Atlas user permissions'
         }
       },
       { status: 500 }
