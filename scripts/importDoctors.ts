@@ -2,8 +2,8 @@ import { MongoClient } from 'mongodb';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// MongoDB connection string - replace with your actual connection string
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://your-username:your-password@cluster0.mongodb.net/doctorDB?retryWrites=true&w=majority';
+
+const MONGODB_URI = process.env.MONGODB_URI!;
 
 interface Doctor {
   id: number;
@@ -18,14 +18,12 @@ async function importDoctors() {
   const client = new MongoClient(MONGODB_URI);
   
   try {
-    // Connect to MongoDB
     await client.connect();
     console.log('Connected to MongoDB');
     
     const db = client.db('doctorDB');
-    const collection = db.collection<Doctor>('doctors'); // Generic type parameter
+    const collection = db.collection<Doctor>('doctors'); 
     
-    // Read JSON file - adjust the path to your doctors JSON file
     const jsonFilePath = path.join(__dirname, '..', 'data', 'doctors.json');
     
     if (!fs.existsSync(jsonFilePath)) {
