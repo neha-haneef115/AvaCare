@@ -12,6 +12,7 @@
     "@auth/mongodb-adapter": "^3.9.1",
     "@clerk/nextjs": "^6.20.2",
     "@react-pdf/renderer": "^4.3.0",
+    "@vercel/analytics": "^1.5.0",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.4.9",
     "date-fns": "^4.1.0",
