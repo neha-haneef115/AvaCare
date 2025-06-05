@@ -1,22 +1,41 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import { MongoClient } from 'mongodb';
+import { MongoClient, Db, Collection } from 'mongodb';
 
+const MONGODB_URI = process.env.MONGODB_URI;
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://nehahaneef203:GL3dXBYVuu2eM2xb@cluster0.6ph39qe.mongodb.net/doctorDB?retryWrites=true&w=majority';
-
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
-declare global {
-  var _mongoClientPromise: Promise<MongoClient> | undefined;
+if (!MONGODB_URI) {
+  throw new Error('Please define the MONGODB_URI environment variable inside .env');
 }
 
-if (!global._mongoClientPromise) {
-  client = new MongoClient(MONGODB_URI);
-  global._mongoClientPromise = client.connect();
+// Global variable to cache the connection
+let cachedClient: MongoClient | null = null;
+let cachedDb: Db | null = null;
+
+async function connectToDatabase() {
+  if (cachedClient && cachedDb) {
+    return { client: cachedClient, db: cachedDb };
+  }
+
+  const client = new MongoClient(MONGODB_URI!, {
+    // Add connection options for better stability
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  });
+
+  try {
+    await client.connect();
+    const db = client.db('doctorDB');
+
+    cachedClient = client;
+    cachedDb = db;
+
+    return { client, db };
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw error;
+  }
 }
-clientPromise = global._mongoClientPromise;
 
 interface Doctor {
   id: number;
@@ -35,7 +54,6 @@ interface RequestBody {
   radius?: number;
   specialties?: string[];
 }
-
 
 const CITY_COORDINATES: { [key: string]: { lat: number; lng: number } } = {
   'karachi': { lat: 24.8607, lng: 67.0011 },
@@ -85,7 +103,6 @@ const CITY_COORDINATES: { [key: string]: { lat: number; lng: number } } = {
   'mirpur khas': { lat: 25.5276, lng: 69.0142 }
 };
 
-
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; 
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -101,6 +118,15 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if MONGODB_URI is defined
+    if (!MONGODB_URI) {
+      console.error('MONGODB_URI is not defined');
+      return NextResponse.json(
+        { error: 'Database configuration error' },
+        { status: 500 }
+      );
+    }
+
     const body: RequestBody = await request.json();
     const { latitude, longitude, city, radius = 25, specialties } = body;
 
@@ -111,9 +137,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const client = await clientPromise;
-    const db = client.db('doctorDB');
-    const collection = db.collection<Doctor>('doctors');
+    // Connect to database with error handling
+    const { db } = await connectToDatabase();
+    const collection: Collection<Doctor> = db.collection('doctors');
 
     // Build the base query
     const baseQuery: any = {};
@@ -230,8 +256,18 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('API Error:', error);
+    
+    // More detailed error logging for debugging
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch nearby doctors' },
+      { 
+        error: 'Failed to fetch nearby doctors',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
@@ -239,16 +275,34 @@ export async function POST(request: NextRequest) {
 
 // GET method for testing
 export async function GET() {
-  return NextResponse.json({
-    message: 'Doctors API is working. Use POST method to search for nearby doctors.',
-    requiredFields: ['latitude', 'longitude', 'city'],
-    optionalFields: ['radius (default: 25km)', 'specialties (array of strings)'],
-    example: {
-      latitude: 24.8607,
-      longitude: 67.0011,
-      city: 'Karachi',
-      radius: 25,
-      specialties: ['Cardiologist', 'Dermatologist']
-    }
-  });
+  try {
+    // Test database connection
+    const { db } = await connectToDatabase();
+    const collection: Collection = db.collection('doctors');
+    const count = await collection.countDocuments({});
+    
+    return NextResponse.json({
+      message: 'Doctors API is working. Use POST method to search for nearby doctors.',
+      databaseStatus: 'Connected',
+      totalDoctors: count,
+      requiredFields: ['latitude', 'longitude', 'city'],
+      optionalFields: ['radius (default: 25km)', 'specialties (array of strings)'],
+      example: {
+        latitude: 24.8607,
+        longitude: 67.0011,
+        city: 'Karachi',
+        radius: 25,
+        specialties: ['Cardiologist', 'Dermatologist']
+      }
+    });
+  } catch (error) {
+    console.error('Database connection test failed:', error);
+    return NextResponse.json(
+      { 
+        message: 'API route exists but database connection failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
 }
