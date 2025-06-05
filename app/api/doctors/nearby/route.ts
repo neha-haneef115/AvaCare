@@ -7,15 +7,12 @@ if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env');
 }
 
-// Global variable to cache the connection (important for Vercel serverless)
 let cachedClient: MongoClient | null = null;
 let cachedDb: Db | null = null;
 
 async function connectToDatabase() {
-  // Return cached connection if available
   if (cachedClient && cachedDb) {
     try {
-      // Test if connection is still alive
       await cachedClient.db('admin').command({ ping: 1 });
       return { client: cachedClient, db: cachedDb };
     } catch (error) {
@@ -26,24 +23,20 @@ async function connectToDatabase() {
   }
 
   const client = new MongoClient(MONGODB_URI!, {
-    // Optimized for Vercel serverless environment
-    maxPoolSize: 1, // Reduced for serverless
+    maxPoolSize: 1,
     minPoolSize: 0,
-    maxIdleTimeMS: 10000, // Shorter for serverless
-    serverSelectionTimeoutMS: 10000, // Increased timeout
+    maxIdleTimeMS: 10000,
+    serverSelectionTimeoutMS: 10000,
     socketTimeoutMS: 30000,
-    connectTimeoutMS: 30000, // Increased timeout
+    connectTimeoutMS: 30000,
     
-    // SSL/TLS configuration
     tls: true,
     tlsAllowInvalidCertificates: false,
     tlsAllowInvalidHostnames: false,
     
-    // Essential for Atlas
     retryWrites: true,
     retryReads: true,
     
-    // Reduced heartbeat for serverless
     heartbeatFrequencyMS: 30000,
   });
 
@@ -51,7 +44,6 @@ async function connectToDatabase() {
     console.log('Attempting to connect to MongoDB...');
     await client.connect();
     
-    // Test the connection
     await client.db('admin').command({ ping: 1 });
     console.log('Successfully connected to MongoDB Atlas');
     
@@ -63,7 +55,6 @@ async function connectToDatabase() {
     return { client, db };
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    // Close client on error to prevent connection leaks
     if (client) {
       try {
         await client.close();
@@ -158,7 +149,6 @@ export async function POST(request: NextRequest) {
   try {
     console.log('POST request received');
     
-    // Check if MONGODB_URI is defined
     if (!MONGODB_URI) {
       console.error('MONGODB_URI is not defined');
       return NextResponse.json(
@@ -189,27 +179,22 @@ export async function POST(request: NextRequest) {
 
     console.log('Connecting to database...');
     
-    // Connect to database with error handling
     const { db } = await connectToDatabase();
     const collection: Collection<Doctor> = db.collection('doctors');
 
     console.log('Database connected, querying doctors...');
 
-    // Build the base query
     const baseQuery: any = {};
     
-    // Add specialty filter if provided
     if (specialties && specialties.length > 0) {
       baseQuery.Category = { 
         $in: specialties.map(spec => new RegExp(spec, 'i')) 
       };
     }
 
-    // Get user's city coordinates
     const userCity = city.toLowerCase();
     let nearbyDoctors: Doctor[] = [];
 
-    // Strategy 1: First try to find doctors in the exact same city
     if (city) {
       const sameCityQuery = { ...baseQuery, City: { $regex: new RegExp(city, 'i') } };
       
@@ -223,11 +208,9 @@ export async function POST(request: NextRequest) {
       console.log(`Found ${sameCityDoctors.length} doctors in same city`);
     }
 
-    // Strategy 2: If no doctors in same city or we need more, find nearby cities
     if (nearbyDoctors.length < 10) {
       const nearbyCities: string[] = [];
       
-      // Find cities within radius
       Object.entries(CITY_COORDINATES).forEach(([cityName, coords]) => {
         const distance = calculateDistance(latitude, longitude, coords.lat, coords.lng);
         if (distance <= radius && cityName !== userCity) {
@@ -236,13 +219,12 @@ export async function POST(request: NextRequest) {
       });
 
       if (nearbyCities.length > 0) {
-        // Create regex patterns for nearby cities
         const cityRegexPatterns = nearbyCities.map(city => new RegExp(city, 'i'));
         
         const nearbyQuery = { 
           ...baseQuery,
           City: { $in: cityRegexPatterns },
-          id: { $nin: nearbyDoctors.map(d => d.id) } // Exclude already found doctors
+          id: { $nin: nearbyDoctors.map(d => d.id) }
         };
 
         const nearbyDoctorsFromOtherCities = await collection
@@ -256,7 +238,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Strategy 3: If still not enough, get top-rated doctors from major cities
     if (nearbyDoctors.length < 5) {
       const majorCities = ['karachi', 'lahore', 'islamabad', 'rawalpindi', 'faisalabad'];
       const fallbackQuery = {
@@ -275,7 +256,6 @@ export async function POST(request: NextRequest) {
       console.log(`Found ${fallbackDoctors.length} fallback doctors`);
     }
 
-    // Add distance information to doctors (approximate)
     const doctorsWithDistance = nearbyDoctors.map(doctor => {
       const doctorCityKey = doctor.City.toLowerCase();
       const doctorCoords = CITY_COORDINATES[doctorCityKey];
@@ -287,23 +267,22 @@ export async function POST(request: NextRequest) {
 
       return {
         ...doctor,
-        distance: Math.round(distance * 10) / 10 // Round to 1 decimal place
+        distance: Math.round(distance * 10) / 10
       };
     });
 
-    // Sort by distance, then by rating
     doctorsWithDistance.sort((a, b) => {
       if (a.distance === b.distance) {
-        return b.Rating - a.Rating; // Higher rating first
+        return b.Rating - a.Rating;
       }
-      return a.distance - b.distance; // Closer distance first
+      return a.distance - b.distance;
     });
 
     console.log(`Returning ${doctorsWithDistance.length} doctors`);
 
     return NextResponse.json({
       success: true,
-      doctors: doctorsWithDistance.slice(0, 20), // Limit to 20 results
+      doctors: doctorsWithDistance.slice(0, 20),
       location: {
         latitude,
         longitude,
@@ -316,7 +295,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('API Error:', error);
     
-    // More detailed error logging for debugging
     if (error instanceof Error) {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
@@ -333,12 +311,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET method for testing
 export async function GET() {
   try {
     console.log('GET request received - testing connection');
     
-    // Test database connection
     const { db } = await connectToDatabase();
     const collection: Collection = db.collection('doctors');
     
@@ -364,7 +340,6 @@ export async function GET() {
   } catch (error) {
     console.error('Database connection test failed:', error);
     
-    // Log additional debugging info
     console.error('MongoDB URI exists:', !!MONGODB_URI);
     console.error('MongoDB URI prefix:', MONGODB_URI?.substring(0, 20));
     
