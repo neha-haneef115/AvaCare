@@ -1,8 +1,8 @@
-// app/api/doctors/nearby/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient } from 'mongodb';
 
-// MongoDB connection string - replace with your actual connection string
+
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://nehahaneef203:GL3dXBYVuu2eM2xb@cluster0.6ph39qe.mongodb.net/doctorDB?retryWrites=true&w=majority';
 
 let client: MongoClient;
@@ -36,7 +36,7 @@ interface RequestBody {
   specialties?: string[];
 }
 
-// City coordinates mapping for Pakistan
+
 const CITY_COORDINATES: { [key: string]: { lat: number; lng: number } } = {
   'karachi': { lat: 24.8607, lng: 67.0011 },
   'lahore': { lat: 31.5204, lng: 74.3587 },
@@ -85,9 +85,9 @@ const CITY_COORDINATES: { [key: string]: { lat: number; lng: number } } = {
   'mirpur khas': { lat: 25.5276, lng: 69.0142 }
 };
 
-// Calculate distance between two points using Haversine formula
+
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Radius of the Earth in kilometers
+  const R = 6371; 
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = 

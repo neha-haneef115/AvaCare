@@ -73,11 +73,9 @@ export default function AnalysisResults({ analysisResults }: AnalysisResultsProp
       reportId: `RPT-${Date.now()}`
     };
     
-    // Store data with a flag indicating fresh generation
     sessionStorage.setItem('medicalReportData', JSON.stringify(reportData));
     sessionStorage.setItem('isFreshReport', 'true');
     
-    // Navigate to report page
     router.push('/Myreports');
   };
 
@@ -86,28 +84,28 @@ export default function AnalysisResults({ analysisResults }: AnalysisResultsProp
   };
 
   return (
-    <div className="max-w-5xl mx-auto mt-10 text-white dark:text-white font-bold rounded-lg border-2 border-black dark:border-gray-500 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(156,163,175,1)]">
+    <div className="max-w-5xl mx-auto mt-10 text-white font-bold rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
       
-      <div className="bg-black dark:bg-gray-700 rounded-t-md border-b border-b-white p-4 md:p-6 text-white dark:text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/10 dark:bg-white/5"></div>
+      <div className="bg-black rounded-t-md border-b border-b-white p-4 md:p-6 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
             <div className="flex items-center space-x-3">
-              <div className="p-2 md:p-3 bg-white/20 dark:bg-gray-600/20 rounded-xl">
-                <Activity className="h-6 w-6 md:h-8 md:w-8 text-white dark:text-white" />
+              <div className="p-2 md:p-3 bg-white/20 rounded-xl">
+                <Activity className="h-6 w-6 md:h-8 md:w-8 text-white" />
               </div>
               <div>
                 <h1 className="text-xl md:text-2xl font-bold">Analysis Results</h1>
-                <p className="text-white dark:text-gray-300 text-xs md:text-sm">AI-powered differential diagnosis</p>
+                <p className="text-white text-xs md:text-sm">AI-powered differential diagnosis</p>
               </div>
             </div>
             <div className="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm">
-              <div className="flex items-center space-x-2 bg-white/20 dark:bg-gray-600/20 rounded-lg px-2 md:px-3 py-1 md:py-2">
+              <div className="flex items-center space-x-2 bg-white/20 rounded-lg px-2 md:px-3 py-1 md:py-2">
                 <Zap className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">AI Analysis</span>
                 <span className="sm:hidden">AI</span>
               </div>
-              <div className="flex items-center space-x-2 bg-white/20 dark:bg-gray-600/20 rounded-lg px-2 md:px-3 py-1 md:py-2">
+              <div className="flex items-center space-x-2 bg-white/20 rounded-lg px-2 md:px-3 py-1 md:py-2">
                 <LuClipboardList className="h-3 w-3 md:h-4 md:w-4" />
                 <span>{analysisResults.conditions.length} Conditions</span>
               </div>
@@ -116,18 +114,18 @@ export default function AnalysisResults({ analysisResults }: AnalysisResultsProp
         </div>
       </div>
 
-      <div className="rounded-b-2xl shadow-2xl border border-gray-200 dark:border-gray-600 overflow-hidden">
+      <div className="rounded-b-2xl shadow-2xl border border-gray-200 overflow-hidden">
         
-        <div className="bg-[#f8fed5] dark:bg-gray-700 px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+        <div className="bg-[#f8fed5] px-4 md:px-6 py-4 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-lg font-bold text-black dark:text-white mb-1">Diagnostic Assessment</h2>
-              <p className="text-sm text-black dark:text-gray-300">Conditions ranked by clinical probability</p>
+              <h2 className="text-lg font-bold text-black mb-1">Diagnostic Assessment</h2>
+              <p className="text-sm text-black">Conditions ranked by clinical probability</p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={handleGenerateReport}
-                className="flex items-center space-x-2 px-3 md:px-4 py-2 bg-[#ddf085] hover:bg-[#a1b339] text-black font-bold rounded-lg border-2 border-black dark:border-gray-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[1px_1px_0px_0px_rgba(156,163,175,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all duration-200 text-xs md:text-sm"
+                className="flex items-center space-x-2 px-3 md:px-4 py-2 bg-[#ddf085] hover:bg-[#a1b339] text-black font-bold rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all duration-200 text-xs md:text-sm"
               >
                 <Download className="h-3 w-3 md:h-4 md:w-4" />
                 <span>Generate Report</span>
@@ -136,27 +134,27 @@ export default function AnalysisResults({ analysisResults }: AnalysisResultsProp
           </div>
         </div>
         
-        <div className="p-4 md:p-6 space-y-4 bg-white dark:bg-gray-800">
+        <div className="p-4 md:p-6 space-y-4 bg-white">
           {analysisResults.conditions.map((condition, index) => (
             <div 
               key={index} 
-              className="bg-white dark:bg-gray-900 border-2 border-black dark:border-gray-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] rounded-2xl overflow-hidden hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] transition-all duration-200"
+              className="bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-2xl overflow-hidden hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200"
             >
               <div 
                 onClick={() => toggleCard(index)}
-                className="cursor-pointer p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+                className="cursor-pointer p-4 hover:bg-gray-50 transition-colors duration-200"
               >
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center space-x-3">
-                      <div className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 bg-black dark:bg-gray-600 text-white rounded-full border border-gray-300 dark:border-gray-500 font-bold text-xs md:text-sm">
+                      <div className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 bg-black text-white rounded-full border border-gray-300 font-bold text-xs md:text-sm">
                         #{index + 1}
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-base md:text-lg font-bold text-black dark:text-white leading-tight">
+                        <h3 className="text-base md:text-lg font-bold text-black leading-tight">
                           {condition.name}
                         </h3>
-                        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 font-medium mt-1">
+                        <p className="text-xs md:text-sm text-gray-600 font-medium mt-1">
                           {condition.description}
                         </p>
                       </div>
@@ -187,19 +185,19 @@ export default function AnalysisResults({ analysisResults }: AnalysisResultsProp
               </div>
               
               {expandedCard === index && (
-                <div className="border-t-2 border-black dark:border-gray-500 bg-gray-50 dark:bg-gray-800 p-4 space-y-4">
+                <div className="border-t-2 border-black bg-gray-50 p-4 space-y-4">
                   {condition.symptoms?.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="text-sm md:text-base font-bold text-black dark:text-white flex items-center">
+                      <h4 className="text-sm md:text-base font-bold text-black flex items-center">
                         <Activity className="h-4 w-4 mr-2" />
                         Associated Symptoms
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {condition.symptoms.map((symptom, i) => (
-                          <div key={i} className="px-3 py-2 bg-[#f8fed5] dark:bg-gray-700 text-xs font-medium rounded-lg border border-black dark:border-gray-500 shadow-[1px_1px_0px_0px_rgba(0,0,0,0.3)]">
+                          <div key={i} className="px-3 py-2 bg-[#f8fed5] text-xs font-medium rounded-lg border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,0.3)]">
                             <div className="flex items-center space-x-2">
-                              <div className="w-1.5 h-1.5 bg-black dark:bg-white rounded-full"></div>
-                              <span className="text-black dark:text-white">{symptom}</span>
+                              <div className="w-1.5 h-1.5 bg-black rounded-full"></div>
+                              <span className="text-black">{symptom}</span>
                             </div>
                           </div>
                         ))}
@@ -207,35 +205,35 @@ export default function AnalysisResults({ analysisResults }: AnalysisResultsProp
                     </div>
                   )}
                   
-                  <div className={`p-4 rounded-lg border-2 border-black dark:border-gray-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] ${
-                    condition.severity === "Emergency" ? "bg-red-50 dark:bg-red-900/20" :
-                    condition.severity === "Urgent" ? "bg-orange-50 dark:bg-orange-900/20" :
-                    condition.severity === "Moderate" ? "bg-yellow-50 dark:bg-yellow-900/20" :
-                    "bg-blue-50 dark:bg-blue-900/20"
+                  <div className={`p-4 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] ${
+                    condition.severity === "Emergency" ? "bg-red-50" :
+                    condition.severity === "Urgent" ? "bg-orange-50" :
+                    condition.severity === "Moderate" ? "bg-yellow-50" :
+                    "bg-blue-50"
                   }`}>
                     <div className="flex items-start space-x-3">
-                      <div className={`p-2 rounded-lg border border-black dark:border-gray-500 ${
-                        condition.severity === "Emergency" ? "bg-red-200 dark:bg-red-800" :
-                        condition.severity === "Urgent" ? "bg-orange-200 dark:bg-orange-800" :
-                        condition.severity === "Moderate" ? "bg-yellow-200 dark:bg-yellow-800" :
-                        "bg-blue-200 dark:bg-blue-800"
+                      <div className={`p-2 rounded-lg border border-black ${
+                        condition.severity === "Emergency" ? "bg-red-200" :
+                        condition.severity === "Urgent" ? "bg-orange-200" :
+                        condition.severity === "Moderate" ? "bg-yellow-200" :
+                        "bg-blue-200"
                       }`}>
                         {getSeverityIcon(condition.severity)}
                       </div>
                       <div className="flex-1">
                         <h5 className={`text-sm font-bold mb-2 ${
-                          condition.severity === "Emergency" ? "text-red-800 dark:text-red-300" :
-                          condition.severity === "Urgent" ? "text-orange-800 dark:text-orange-300" :
-                          condition.severity === "Moderate" ? "text-yellow-800 dark:text-yellow-300" :
-                          "text-blue-800 dark:text-blue-300"
+                          condition.severity === "Emergency" ? "text-red-800" :
+                          condition.severity === "Urgent" ? "text-orange-800" :
+                          condition.severity === "Moderate" ? "text-yellow-800" :
+                          "text-blue-800"
                         }`}>
                           Recommended Action:
                         </h5>
                         <p className={`text-xs md:text-sm font-medium leading-relaxed ${
-                          condition.severity === "Emergency" ? "text-red-700 dark:text-red-400" :
-                          condition.severity === "Urgent" ? "text-orange-700 dark:text-orange-400" :
-                          condition.severity === "Moderate" ? "text-yellow-700 dark:text-yellow-400" :
-                          "text-blue-700 dark:text-blue-400"
+                          condition.severity === "Emergency" ? "text-red-700" :
+                          condition.severity === "Urgent" ? "text-orange-700" :
+                          condition.severity === "Moderate" ? "text-yellow-700" :
+                          "text-blue-700"
                         }`}>
                           {condition.advice}
                         </p>
@@ -248,15 +246,15 @@ export default function AnalysisResults({ analysisResults }: AnalysisResultsProp
           ))}
         </div>
         
-        <div className="p-4 md:p-6 bg-[#f8fed5] dark:bg-gray-700 border-t border-black dark:border-gray-600">
-          <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg p-4">
+        <div className="p-4 md:p-6 bg-[#f8fed5] border-t border-black">
+          <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 p-2 bg-red-200 dark:bg-red-800 border border-red-400 dark:border-red-600 rounded-lg">
-                <AlertTriangle className="text-red-700 dark:text-red-300 h-4 w-4" />
+              <div className="flex-shrink-0 p-2 bg-red-200 border border-red-400 rounded-lg">
+                <AlertTriangle className="text-red-700 h-4 w-4" />
               </div>
               <div className="flex-1">
-                <h4 className="text-sm md:text-base font-bold text-red-800 dark:text-red-300 mb-1">Important Medical Disclaimer</h4>
-                <p className="text-xs md:text-sm text-red-700 dark:text-red-400 font-medium leading-relaxed">
+                <h4 className="text-sm md:text-base font-bold text-red-800 mb-1">Important Medical Disclaimer</h4>
+                <p className="text-xs md:text-sm text-red-700 font-medium leading-relaxed">
                   This AI analysis is for informational purposes only and should not replace professional medical advice, diagnosis, or treatment. Always consult qualified healthcare professionals for any health concerns or before making medical decisions.
                 </p>
               </div>

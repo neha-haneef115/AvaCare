@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import MainLayout from '@/components/MainLayout';
-import { Star,  Loader2, Navigation, MapPin } from 'lucide-react';
+import { Star, Loader2, Navigation, MapPin } from 'lucide-react';
 
 interface Doctor {
   id: number;
@@ -31,11 +31,6 @@ export default function DoctorsPage() {
 
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error('Geolocation is not supported by this browser'));
-          return;
-        }
-
         navigator.geolocation.getCurrentPosition(
           resolve,
           reject,
@@ -52,8 +47,7 @@ export default function DoctorsPage() {
         );
         const geocodeData = await geocodeResponse.json();
         cityName = geocodeData.city || geocodeData.locality || geocodeData.principalSubdivision || 'Unknown';
-      } catch (geocodeError) {
-        console.warn('Failed to get city name:', geocodeError);
+      } catch {
         cityName = 'Unknown';
       }
 
@@ -61,7 +55,6 @@ export default function DoctorsPage() {
       await fetchNearbyDoctors(latitude, longitude, cityName);
       
     } catch (error) {
-      console.error('Location detection failed:', error);
       setError('Failed to detect location. Please try again or enable location services.');
     } finally {
       setLoading(false);
@@ -88,37 +81,36 @@ export default function DoctorsPage() {
       }
 
       const data = await response.json();
-      console.log('API Response:', data);
       setDoctors(data.doctors || []);
     } catch (error) {
-      console.error('Failed to fetch doctors:', error);
       setError(error instanceof Error ? error.message : 'Failed to load nearby doctors. Please try again.');
     }
   };
 
   return (
     <MainLayout>
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#f8fed5]">
-        
-        <header className="bg-black  border-b-2 border-black p-6 flex-shrink-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="flex-1 flex flex-col h-full overflow-y-auto bg-white">
+        <header className="bg-black border-b-2 border-black p-4 md:p-6 flex-shrink-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           <div className="max-w-6xl mx-auto">
-            <div className="flex items-center mb-6">
-               <div className="p-2 md:p-3 bg-white/20 mr-3 dark:bg-gray-600/20 rounded-xl">
-                              <MapPin className="h-6 w-6 md:h-8 md:w-8 text-white dark:text-white" />
-                            </div>
+            <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left mb-6 gap-4">
+              <div className="p-2 md:p-3 bg-white/20  rounded-xl">
+                <MapPin className="h-6 w-6 md:h-8 md:w-8 text-white " />
+              </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">Nearby Doctors</h1>
-                <p className="text-white font-medium text-lg">Find healthcare providers in your area</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">Nearby Doctors</h1>
+                <p className="text-white font-medium text-base md:text-lg">
+                  Find healthcare providers in your area
+                </p>
               </div>
             </div>
-            
+
             <div className="mt-6">
               {!userLocation ? (
                 <button
                   onClick={detectLocation}
                   disabled={loading}
-                  className="flex items-center px-6 py-4 
-                           text-black font-bold rounded-lg 
+                  className="flex items-center justify-center w-full md:w-auto px-4 py-3 md:px-6 md:py-4 
+                           text-sm md:text-base text-black font-bold rounded-lg 
                            border-2 border-white bg-[#f5ff23]
                            shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
                            hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
@@ -127,18 +119,18 @@ export default function DoctorsPage() {
                            disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
-                    <Loader2 className="mr-3 animate-spin" size={20} />
+                    <Loader2 className="mr-2 md:mr-3 animate-spin" size={20} />
                   ) : (
-                    <Navigation className="mr-3" size={20} />
+                    <Navigation className="mr-2 md:mr-3" size={20} />
                   )}
                   {loading ? 'Detecting Location...' : 'Find Doctors Near Me'}
                 </button>
               ) : (
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center px-6 py-3 bg-[#e0f081] text-black rounded-lg 
-                                 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                    <MapPin size={18} className="mr-3" /> 
-                    <span className="font-bold">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center w-full md:w-auto px-4 py-2 md:px-6 md:py-3 bg-[#e0f081] text-black rounded-lg 
+                               border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                    <MapPin size={18} className="mr-2 md:mr-3" />
+                    <span className="font-bold text-sm md:text-base">
                       {userLocation.city} • {doctors.length} doctors found
                     </span>
                   </div>
@@ -148,7 +140,7 @@ export default function DoctorsPage() {
                       setDoctors([]);
                       setError('');
                     }}
-                    className="px-4 py-2 text-black font-bold rounded-lg 
+                    className="w-full md:w-auto px-4 py-2 text-black font-bold rounded-lg 
                              border-2 border-black bg-[#f8fed5]
                              shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] 
                              hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] 
@@ -162,19 +154,18 @@ export default function DoctorsPage() {
             </div>
 
             {error && (
-              <div className="mt-6 p-4 bg-red-200 border-2 border-black rounded-lg 
+              <div className="mt-6 p-3 md:p-4 bg-red-200 border-2 border-black rounded-lg 
                              shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-black font-bold">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-red-600 rounded-full mr-3"></div>
-                  {error}
+                  <div className="w-3 h-3 bg-red-600 rounded-full mr-2 md:mr-3"></div>
+                  <span className="text-sm md:text-base">{error}</span>
                 </div>
               </div>
             )}
           </div>
         </header>
 
-        {/* Main Content - Scrollable */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 ">
           <div className="max-w-6xl mx-auto p-6">
             {loading && userLocation && (
               <div className="flex justify-center py-12">
@@ -205,7 +196,7 @@ export default function DoctorsPage() {
             )}
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {doctors.map((doctor: Doctor) => (
+              {doctors.map((doctor) => (
                 <div
                   key={doctor.id}
                   className="bg-white border-2 border-black rounded-lg p-6 
@@ -216,7 +207,6 @@ export default function DoctorsPage() {
                 >
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="font-bold text-lg text-black leading-tight pr-2">{doctor.Name}</h3>
-                    
                   </div>
                   
                   <div className="space-y-3 mb-5">
@@ -245,7 +235,6 @@ export default function DoctorsPage() {
           </div>
         </main>
       </div>
-
     </MainLayout>
   );
 }

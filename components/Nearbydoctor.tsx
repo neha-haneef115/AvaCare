@@ -314,8 +314,8 @@ export default function NearbyDoctors({
     <div className="max-w-5xl mt-10 mx-auto bg-white border-2 border-black rounded-lg overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
       <div className="p-4 bg-black text-white border-b-2 border-black">
         <div className="flex items-center space-x-3">
-                     <div className="p-2 md:p-3 bg-white/20 dark:bg-gray-600/20 rounded-xl">
-                       <FaUserDoctor className="h-6 w-6 md:h-8 md:w-8 text-white dark:text-white" />
+                     <div className="p-2 md:p-3 bg-white/20 rounded-xl">
+                       <FaUserDoctor className="h-6 w-6 md:h-8 md:w-8 text-white " />
                      </div>
                      <div>
                        <h1 className="text-xl md:text-2xl font-bold">Recommended Healthcare Providers</h1>
