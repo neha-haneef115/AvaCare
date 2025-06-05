@@ -1,14 +1,12 @@
-// First, install next-themes:
-// npm install next-themes
 
-// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import Script from "next/script"; 
 import "./globals.css";
 
 const geistSans = Geist({
-  variable: "--font-geist-sans", 
+  variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
@@ -29,6 +27,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-8RVENPGH08"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-8RVENPGH08', {
+              page_path: window.location.pathname,
+            });
+          `}
+        </Script>
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -44,4 +59,3 @@ export default function RootLayout({
     </html>
   );
 }
-
