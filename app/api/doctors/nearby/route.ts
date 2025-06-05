@@ -17,14 +17,30 @@ async function connectToDatabase() {
   }
 
   const client = new MongoClient(MONGODB_URI!, {
-    // Add connection options for better stability
+    // Updated connection options for better SSL/TLS handling
     maxPoolSize: 10,
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
+    connectTimeoutMS: 10000,
+    // SSL/TLS configuration
+    tls: true,
+    tlsAllowInvalidCertificates: false,
+    tlsAllowInvalidHostnames: false,
+    // Retry configuration
+    retryWrites: true,
+    retryReads: true,
+    // Additional stability options
+    heartbeatFrequencyMS: 10000,
+    maxIdleTimeMS: 30000,
   });
 
   try {
     await client.connect();
+    
+    // Test the connection
+    await client.db('admin').command({ ping: 1 });
+    console.log('Successfully connected to MongoDB');
+    
     const db = client.db('doctorDB');
 
     cachedClient = client;
@@ -33,6 +49,10 @@ async function connectToDatabase() {
     return { client, db };
   } catch (error) {
     console.error('MongoDB connection error:', error);
+    // Close client on error to prevent connection leaks
+    if (client) {
+      await client.close().catch(console.error);
+    }
     throw error;
   }
 }
@@ -276,31 +296,50 @@ export async function POST(request: NextRequest) {
 // GET method for testing
 export async function GET() {
   try {
-    // Test database connection
-    const { db } = await connectToDatabase();
-    const collection: Collection = db.collection('doctors');
-    const count = await collection.countDocuments({});
+    // Test database connection with retry logic
+    let retryCount = 0;
+    const maxRetries = 3;
     
-    return NextResponse.json({
-      message: 'Doctors API is working. Use POST method to search for nearby doctors.',
-      databaseStatus: 'Connected',
-      totalDoctors: count,
-      requiredFields: ['latitude', 'longitude', 'city'],
-      optionalFields: ['radius (default: 25km)', 'specialties (array of strings)'],
-      example: {
-        latitude: 24.8607,
-        longitude: 67.0011,
-        city: 'Karachi',
-        radius: 25,
-        specialties: ['Cardiologist', 'Dermatologist']
+    while (retryCount < maxRetries) {
+      try {
+        const { db } = await connectToDatabase();
+        const collection: Collection = db.collection('doctors');
+        const count = await collection.countDocuments({});
+        
+        return NextResponse.json({
+          message: 'Doctors API is working. Use POST method to search for nearby doctors.',
+          databaseStatus: 'Connected',
+          totalDoctors: count,
+          requiredFields: ['latitude', 'longitude', 'city'],
+          optionalFields: ['radius (default: 25km)', 'specialties (array of strings)'],
+          example: {
+            latitude: 24.8607,
+            longitude: 67.0011,
+            city: 'Karachi',
+            radius: 25,
+            specialties: ['Cardiologist', 'Dermatologist']
+          }
+        });
+      } catch (error) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          throw error;
+        }
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
       }
-    });
+    }
   } catch (error) {
     console.error('Database connection test failed:', error);
     return NextResponse.json(
       { 
         message: 'API route exists but database connection failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        troubleshooting: {
+          'SSL Error': 'Try updating your MongoDB connection string or check Atlas network settings',
+          'IP Whitelist': 'Ensure your IP is whitelisted in MongoDB Atlas',
+          'Credentials': 'Verify username and password are correct'
+        }
       },
       { status: 500 }
     );
