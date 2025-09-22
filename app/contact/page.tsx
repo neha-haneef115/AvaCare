@@ -122,7 +122,7 @@ export default function ContactPage() {
       <IoLogoWhatsapp className="w-6 h-6 text-white" />
       <div>
        
-        <p className="text-white">+92 325 7220057</p>
+        <p className="text-white">+92 314 2959462</p>
       </div>
     </Link>
 
